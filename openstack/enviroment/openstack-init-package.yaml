@@ -1,0 +1,12 @@
+---
+  - name: Openstack init package
+    hosts: openstack
+    become: yes
+    become_method: sudo
+    tasks:
+
+#    - name: Add specified repository into sources list
+#      ansible.builtin.apt_repository:
+#        repo: deb cloud-archive:yoga/stable
+#        state: absent
+

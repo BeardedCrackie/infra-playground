@@ -1,0 +1,21 @@
+---
+  - name: Apt update
+    hosts: openstack
+    become: yes
+    become_method: sudo
+    tasks:
+    - name: "Update cache"
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+    - name: Install the package "nano"
+      ansible.builtin.apt:
+        name: nano
+    - name: Install the package "ping"
+      ansible.builtin.apt:
+        name: iputils-ping
+#    - name: Update all packages to their latest version
+#      ansible.builtin.apt:
+#        name: "*"
+#        state: latest
+

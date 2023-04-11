@@ -1,0 +1,24 @@
+---
+  - name: Openstack init
+    hosts: openstack_controller
+    become: yes
+    become_method: sudo
+    tasks:
+
+### Messagw Queue ###
+
+    - name: Install the package "rabbitmq-server"
+      ansible.builtin.apt:
+        name: rabbitmq-server
+
+    - name: Openstack user for MQ
+      community.rabbitmq.rabbitmq_user:
+        user: openstack
+        password: "{{ rabbit_pass }}"
+        vhost: /
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+        state: present
+
+   

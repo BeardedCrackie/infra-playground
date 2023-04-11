@@ -1,0 +1,28 @@
+---
+  - name: Openstack init
+    hosts: openstack
+    become: yes
+    become_method: sudo
+
+  - name: init-network
+    import_playbook: enviroment/openstack-init-network.yaml
+  
+  - name: init-ntp
+    import_playbook: enviroment/openstack-init-ntp.yaml
+
+#    - name: init-package #no need for ubuntu 22.04 TLS
+#      import_playbook: enviroment/openstack-init-package.yaml
+
+  - name: init-sql
+    import_playbook: enviroment/openstack-init-sql.yaml
+
+  - name: init-mq
+    import_playbook: enviroment/openstack-init-mq.yaml
+
+  - name: init-memcached
+    import_playbook: enviroment/openstack-init-memcached.yaml
+
+  - name: init-etcd
+    import_playbook: enviroment/openstack-init-etcd.yaml
+
+

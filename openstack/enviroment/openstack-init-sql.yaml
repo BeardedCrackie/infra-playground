@@ -1,0 +1,43 @@
+---
+  - name: Openstack init
+    hosts: openstack_controller
+    become: yes
+    become_method: sudo
+    tasks:
+
+### SQL database ###
+
+    - name: Install the package "mariadb-server"
+      ansible.builtin.apt:
+        name: mariadb-server
+
+    - name: Install the package "python3-pymysql"
+      ansible.builtin.apt:
+        name: python3-pymysql
+
+    - name: Replace file with clear file
+      copy:
+        content: 
+          "[mysqld]
+
+          bind-address = {{ openstack_host }}
+
+
+          default-storage-engine = innodb
+
+          innodb_file_per_table = on
+
+          max_connections = 4096
+
+          collation-server = utf8_general_ci
+
+          character-set-server = utf8"
+
+        dest: /etc/mysql/mariadb.conf.d/99-openstack.cnf
+
+    - name: Restart service mysql
+      ansible.builtin.service:
+        name: mysql
+        state: restarted
+
+#run "mysql_secure_installation" manuallu

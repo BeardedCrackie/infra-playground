@@ -1,0 +1,72 @@
+---
+### controller + compute
+  - name: Init - NTP - apk install
+    hosts: openstack
+    become: yes
+    become_method: sudo
+    tasks:
+
+    - name: Install the package "chrony "
+      ansible.builtin.apt:
+        name: chrony
+        state: present
+
+
+### controller only
+  - name: Init - NTP - Controller
+    hosts: openstack_controller
+    become: yes
+    become_method: sudo
+    tasks:
+
+    - name: Add NTP server to controller
+      lineinfile:
+        dest: /etc/chrony/chrony.conf
+        regexp: '"server * iburst"'
+        line: "server {{ ntp_server }} iburst"
+        state: present
+
+    - name: NTP controller listening to network
+      lineinfile:
+        dest: /etc/chrony/chrony.conf
+        regexp: '"allow *"'
+        line: "allow {{ cluster_cidr }}"
+        state: present
+
+### compute only 
+  - name: Init - NTP - Compute
+    hosts: openstack_compute
+    become: yes
+    become_method: sudo
+    tasks:
+
+    - name: Remove file (delete file)
+      ansible.builtin.file:
+        path: /etc/chrony/chrony.conf
+        state: absent
+
+    - name: Replace file with clear file
+      copy:
+        content: ""
+        dest: /etc/chrony/chrony.conf
+
+    - name: Add IP address of all controllers to ntp
+      lineinfile:
+        dest: /etc/chrony/chrony.conf
+        regexp: 'server {{ hostvars[item].openstack_host }} iburst'
+        line: "server {{ hostvars[item].openstack_host }} iburst"
+        state: present
+      when: hostvars[item].openstack_host is defined
+      with_items: "{{ groups.openstack_controller }}"
+
+### controller + compute
+  - name: Init - NTP - Restart
+    hosts: openstack
+    become: yes
+    become_method: sudo
+    tasks:
+
+    - name: Restart service chrony if not started
+      ansible.builtin.service:
+        name: chrony
+        state: restarted
