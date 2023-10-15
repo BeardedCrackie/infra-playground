@@ -1,9 +1,5 @@
 - name: Playbook to install microk8s
-<<<<<<< HEAD
   hosts: { { hosts_group } }
-=======
-  hosts: webservers
->>>>>>> 62470535b943a73901d6c4e3078244293ef9104e
   become: true
   tasks:
     - name: Ansible snap install microk8s
