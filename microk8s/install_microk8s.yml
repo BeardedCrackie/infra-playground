@@ -1,3 +1,4 @@
+---
 - name: Playbook to install microk8s
   hosts: { { hosts_group } }
   become: true
