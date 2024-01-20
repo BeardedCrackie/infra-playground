@@ -1,0 +1,22 @@
+
+
+all:
+    vars:
+        proxmox:
+            host: "x.x.x.x`"
+            user: "user@pam"
+            password: "secret"
+            node: "proxmox"
+        proxmox_vm:
+            secret: "supersecret"
+            username: "mylinuxuser"
+            ssh_public_key: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJkVm98B71lD5XHfihwcYHE9TVpsJmK1vR1JcaU82L+'
+
+microk8s:
+  hosts:
+    microk8s-node-a:
+        ansible_host: 192.168.0.50
+    microk8s-node-b:
+        ansible_host: 192.168.0.51
+    microk8s-node-c:
+        ansible_host: 192.168.0.52
