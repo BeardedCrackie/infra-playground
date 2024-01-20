@@ -1,3 +1,0 @@
-virtual_environment_api_token = "user@pam!key_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-virtual_environment_endpoint = "https://ip_address:8006/"
-virtual_environment_username = "user"

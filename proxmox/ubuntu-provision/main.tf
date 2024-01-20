@@ -5,17 +5,20 @@ terraform {
       source = "bpg/proxmox"
       version = "0.43.2"
     }
+    null = {
+      source = "hashicorp/null"
+      version = "3.2.2"
+    }
   }
 }
 
 provider "proxmox" {
-  endpoint = var.virtual_environment_endpoint
-  api_token = var.virtual_environment_api_token
-  username = var.virtual_environment_username
+  endpoint = var.virtual_environment.endpoint
+  username = var.virtual_environment.username
+  password = var.virtual_environment.password
   insecure  = true
   ssh {
     agent    = true
-    username = var.virtual_environment_username
   }
 }
 
@@ -27,13 +30,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   #timeout in seconds
   timeout_create = "18000"
 
-  efi_disk {
-    datastore_id = "local-zfs"
-    file_format = "raw"
-  }
-
   node_name = "proxmox"
-  vm_id     = 4321
 
   agent {
     # read 'Qemu guest agent' section, change to true only when ready
@@ -54,11 +51,17 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 
   initialization {
+    datastore_id = "local-zfs"
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "192.168.0.77/24"
+        gateway = "192.168.0.1"
       }
     }
+    dns {
+      servers = ["8.8.8.8"]
+    }
+    
 
     user_account {
       keys     = [trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)]
@@ -89,7 +92,9 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_qco
   content_type = "iso"
   datastore_id = "local"
   node_name    = "proxmox"
-  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  file_name = "${var.project.name}.ubuntu-cloudimg-amd64.img"
+  overwrite = true
 }
 
 resource "random_password" "ubuntu_vm_password" {
@@ -101,6 +106,11 @@ resource "random_password" "ubuntu_vm_password" {
 resource "tls_private_key" "ubuntu_vm_key" {
   algorithm = "RSA"
   rsa_bits  = 2048
+}
+
+resource "local_sensitive_file" "cloud_pem" { 
+  filename = "${path.module}/privkey.pem"
+  content = tls_private_key.ubuntu_vm_key.private_key_pem
 }
 
 output "ubuntu_vm_password" {
@@ -115,4 +125,29 @@ output "ubuntu_vm_private_key" {
 
 output "ubuntu_vm_public_key" {
   value = tls_private_key.ubuntu_vm_key.public_key_openssh
+}
+
+resource "null_resource" "copy_file_on_vm" {
+  depends_on = [
+    #proxmox_virtual_environment_vm.ubuntu_vm,
+    local_sensitive_file.cloud_pem
+  ]
+  triggers = {
+    always_run = timestamp()
+  }
+  
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = tls_private_key.ubuntu_vm_key.private_key_pem
+    host        = "192.168.0.77"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt update",
+      "sudo apt install git -y",
+      "echo 'install ' >> test.txt",
+      "date -u >> test.txt"
+    ]
+  }
 }

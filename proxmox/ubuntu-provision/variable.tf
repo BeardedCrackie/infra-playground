@@ -1,11 +1,14 @@
-variable "virtual_environment_api_token" {
-    type = string
+variable "virtual_environment" {
+    type = object({
+        password = string
+        endpoint = string
+        username = string
+    })
+    sensitive = true
 } 
 
-variable "virtual_environment_endpoint" {
-    type = string
-}
-
-variable "virtual_environment_username" {
-    type = string
-}
+variable "project" {
+    type = object({
+        name = string
+    })
+} 

@@ -1,0 +1,9 @@
+virtual_environment = {
+    password = "upassword"
+    endpoint = "https://ip_address:8006/"
+    username = "user"
+}
+
+project = {
+    name = "ubuntu-test-cloud-provision"
+}
