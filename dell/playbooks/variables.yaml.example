@@ -1,0 +1,5 @@
+---
+dell_idrac:
+  uri: "x.x.x.x"
+  user: "user"
+  password: "password"
