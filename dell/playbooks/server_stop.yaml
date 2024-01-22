@@ -1,6 +1,5 @@
 - name: Manage power state of the first device
   hosts: localhost
-  vars_files: ./variables.yaml
   tasks:
   - name: Manage power state of the first device
     dellemc.openmanage.redfish_powerstate:
