@@ -1,0 +1,1 @@
+ssh potociarm@192.168.0.80 -i ~/.ssh/microk8s-learn-platform.pem
