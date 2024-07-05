@@ -46,9 +46,11 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   disk {
     datastore_id = "local-zfs"
-    file_id      = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_qcow2_img.id
+    file_id      = proxmox_virtual_environment_download_file.image.id
     interface    = "virtio0"
     #file_format = "raw"
+    iothread     = true
+    discard      = "on"
     size         = 20
   }
 
@@ -56,19 +58,19 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     datastore_id = "local-zfs"
     ip_config {
       ipv4 {
-        address = "192.168.0.77/24"
-        gateway = "192.168.0.1"
+        address = "${var.vm.ip}/${var.vm.prefix}"
+        gateway = "${var.vm.gw}"
       }
     }
 
     dns {
-      servers = ["8.8.8.8"]
+      servers = "${var.vm.dns_servers}"
     }
     
     user_account {
-      keys     = [trimspace(data.local_file.ssh_public_key.content)]
+      keys     = [trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)]
       password = random_password.ubuntu_vm_password.result
-      username = "ubuntu"
+      username = var.vm.username
     }
 
      #user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
@@ -90,13 +92,13 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   serial_device {}
 }
 
-resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_qcow2_img" {
+resource "proxmox_virtual_environment_download_file" "image" {
   content_type = "iso"
   datastore_id = "local"
-  file_name    = "${var.project.name}-ubuntu_22_jammy.img"
+  file_name    = "${var.project.name}.img"
   node_name    = "proxmox"
-  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
-  overwrite = true
+  url          = var.image_url
+  overwrite = false
 }
 
 resource "random_password" "ubuntu_vm_password" {
@@ -111,8 +113,15 @@ resource "tls_private_key" "ubuntu_vm_key" {
 }
 
 resource "local_sensitive_file" "cloud_pem" { 
-  filename = "${path.module}/privkey.pem"
+  #filename = "${path.module}/privkey.pem"
+  filename = pathexpand("~/.ssh/${var.project.name}.pem")
   content = tls_private_key.ubuntu_vm_key.private_key_pem
+}
+
+resource "local_sensitive_file" "cloud_public" { 
+  filename = "${path.module}/id_rsa.pub"
+  #content = tls_private_key.ubuntu_vm_key.private_key_pem
+  content = tls_private_key.ubuntu_vm_key.public_key_openssh
 }
 
 output "ubuntu_vm_password" {
@@ -129,30 +138,34 @@ output "ubuntu_vm_public_key" {
   value = tls_private_key.ubuntu_vm_key.public_key_openssh
 }
 
-data "local_file" "ssh_public_key" {
-  filename = "${path.module}/id_rsa.pub"
+resource "local_file" "foo" {
+    content     = "ssh ${var.vm.username}@${var.vm.ip} -i ~/.ssh/${var.project.name}.pem"
+    filename = "${path.module}/connect.sh"
 }
 
-resource "null_resource" "copy_file_on_vm" {
-  depends_on = [
-    proxmox_virtual_environment_vm.ubuntu_vm,
-    local_sensitive_file.cloud_pem
-  ]
-  triggers = {
-    always_run = timestamp()
-  }
-  
-  connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = tls_private_key.ubuntu_vm_key.private_key_pem
-    host        = "192.168.0.77"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt update",
-      "sudo apt install git -y",
-      "sudo snap install microk8s --classic --channel=1.30 -y"
-    ]
-  }
-}
+#data "local_file" "ssh_public_key" {
+#  filename = "${path.module}/id_rsa.pub"
+#}
+
+#resource "null_resource" "copy_file_on_vm" {
+#  depends_on = [
+#    proxmox_virtual_environment_vm.ubuntu_vm,
+#    local_sensitive_file.cloud_pem
+#  ]
+#  triggers = {
+#    always_run = timestamp()
+#  }
+#  
+#  connection {
+#    type        = "ssh"
+#    user        = "${var.vm.username}"
+#    private_key = tls_private_key.ubuntu_vm_key.private_key_pem
+#    host        = "${var.vm.ip}"
+#  }
+#  provisioner "remote-exec" {
+#    inline = [
+#      "sudo apt update",
+#      "sudo apt upgrade -y"
+#    ]
+#  }
+#}
