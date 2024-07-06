@@ -18,7 +18,8 @@ provider "proxmox" {
   password = var.virtual_environment.password
   insecure  = true
   ssh {
-    agent    = true
+    agent    = false
+    private_key = file(var.priv_key)
   }
 }
 

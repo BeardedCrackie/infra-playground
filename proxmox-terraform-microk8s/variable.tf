@@ -34,3 +34,7 @@ variable "vm" {
       dns_servers = ["8.8.8.8"]
     }
 } 
+
+variable "priv_key" {
+    type = string
+}
