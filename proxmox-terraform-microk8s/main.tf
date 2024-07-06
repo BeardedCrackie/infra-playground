@@ -32,7 +32,14 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   #timeout in seconds
   timeout_create = "18000"
 
-  node_name = "proxmox"
+
+  cpu {
+    cores = 4
+  }
+
+  memory {
+    dedicated = 8192
+  }
 
   agent {
     # read 'Qemu guest agent' section, change to true only when ready
