@@ -9,6 +9,10 @@ terraform {
       source = "hashicorp/null"
       version = "3.2.2"
     }
+    ansible = {
+      version = "~> 1.3.0"
+      source  = "ansible/ansible"
+    }
   }
 }
 
@@ -186,5 +190,22 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
     EOF
 
     file_name = "cloud-config.yaml"
+  }
+}
+
+resource "ansible_group" "group" {
+  name     = "${var.project.name}"
+}
+
+resource "ansible_host" "host" {
+  name     = "${var.project.name}-${var.vm_name}"
+  groups = ["${var.project.name}"]
+  variables = {
+    ansible_host = "${var.vm.ip}"
+    ansible_user = "${var.vm.username}"
+    ansible_ssh_private_key_file = "~/.ssh/microk8s-learn-platform.pem"
+    ansible_python_interpreter = "/usr/bin/python3"
+    greetings   = "from host!"
+    some        = "variable"
   }
 }
