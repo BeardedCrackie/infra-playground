@@ -28,7 +28,7 @@ provider "proxmox" {
 }
 
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
-  name        = "${var.project.name}-${var.vm.name}"
+  name        = "${var.project.name}-${var.vm_name}"
   description = "Managed by Terraform"
   tags        = ["terraform", "ubuntu"]
   started = true
@@ -36,7 +36,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   #timeout in seconds
   timeout_create = "18000"
 
-  node_name = var.project.node_name
+  node_name = var.virtual_environment.node_name
 
   cpu {
     cores = 4
@@ -152,7 +152,7 @@ resource "local_file" "connect_script" {
 resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
-  node_name    = "proxmox"
+  node_name    = var.virtual_environment.node_name
 
   source_raw {
     data = <<-EOF

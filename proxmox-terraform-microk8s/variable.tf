@@ -37,6 +37,10 @@ variable "vm" {
     }
 } 
 
+variable "vm_ip" {
+    type = string
+}
+
 variable "vm_name" {
     type = string
     default = "vm"
