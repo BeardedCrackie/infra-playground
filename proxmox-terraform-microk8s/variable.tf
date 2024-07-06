@@ -3,6 +3,8 @@ variable "virtual_environment" {
         password = string
         endpoint = string
         username = string
+        node_name = string
+        datastore_id = string
     })
     sensitive = true
 } 
@@ -34,6 +36,11 @@ variable "vm" {
       dns_servers = ["8.8.8.8"]
     }
 } 
+
+variable "vm_name" {
+    type = string
+    default = "vm"
+}
 
 variable "priv_key" {
     type = string

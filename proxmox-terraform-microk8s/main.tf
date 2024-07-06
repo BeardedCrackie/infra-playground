@@ -24,7 +24,7 @@ provider "proxmox" {
 }
 
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
-  name        = "${var.project.name}-ubuntu-vm"
+  name        = "${var.project.name}-${var.vm.name}"
   description = "Managed by Terraform"
   tags        = ["terraform", "ubuntu"]
   started = true
@@ -32,6 +32,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   #timeout in seconds
   timeout_create = "18000"
 
+  node_name = var.project.node_name
 
   cpu {
     cores = 4
@@ -53,7 +54,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 
   disk {
-    datastore_id = "local-zfs"
+    datastore_id = var.virtual_environment.datastore_id
     file_id      = proxmox_virtual_environment_download_file.image.id
     interface    = "virtio0"
     #file_format = "raw"
@@ -63,7 +64,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 
   initialization {
-    datastore_id = "local-zfs"
+    datastore_id = var.virtual_environment.datastore_id
     ip_config {
       ipv4 {
         address = "${var.vm.ip}/${var.vm.prefix}"
@@ -94,7 +95,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   tpm_state {
     version = "v2.0"
-    datastore_id = "local-zfs"
+    datastore_id = var.virtual_environment.datastore_id
   }
 
   serial_device {}
@@ -104,7 +105,7 @@ resource "proxmox_virtual_environment_download_file" "image" {
   content_type = "iso"
   datastore_id = "local"
   file_name    = "${var.project.name}.img"
-  node_name    = "proxmox"
+  node_name    = var.virtual_environment.node_name
   url          = var.image_url
   overwrite = false
 }
