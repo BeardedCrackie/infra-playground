@@ -197,7 +197,7 @@ resource "ansible_host" "host" {
   variables = {
     ansible_host = "${var.vm.ip}"
     ansible_user = "${var.vm.username}"
-    ansible_ssh_private_key_file = "~/.ssh/microk8s-learn-platform.pem"
+    ansible_ssh_private_key_file = "~/.ssh/${var.project.name}.pem"
     ansible_python_interpreter = "/usr/bin/python3"
     greetings   = "from host!"
     some        = "variable"
