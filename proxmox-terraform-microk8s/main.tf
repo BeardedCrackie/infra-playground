@@ -43,7 +43,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   agent {
     # read 'Qemu guest agent' section, change to true only when ready
-    enabled = false
+    enabled = true
   }
 
   startup {
