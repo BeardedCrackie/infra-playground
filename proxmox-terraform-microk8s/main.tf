@@ -147,12 +147,6 @@ output "ubuntu_vm_public_key" {
 resource "local_file" "connect_script" {
     content     = "ssh ${var.vm.username}@${var.vm.ip} -i ~/.ssh/${var.project.name}.pem"
     filename = "${path.module}/connect.sh"
-
-  provisioner "local-exec" {
-    when = destroy
-    command = "ssh-keygen -f '~/.ssh/known_hosts' -R '${var.vm.ip}'"
-  }
-
 }
 
 resource "proxmox_virtual_environment_file" "cloud_config" {
