@@ -76,13 +76,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
       servers = "${var.vm.dns_servers}"
     }
     
-    user_account {
-      keys     = [trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)]
-      password = random_password.ubuntu_vm_password.result
-      username = var.vm.username
-    }
-
-     #user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+    user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
   }
 
   network_device {
@@ -147,34 +141,51 @@ output "ubuntu_vm_public_key" {
   value = tls_private_key.ubuntu_vm_key.public_key_openssh
 }
 
-resource "local_file" "foo" {
+resource "local_file" "connect_script" {
     content     = "ssh ${var.vm.username}@${var.vm.ip} -i ~/.ssh/${var.project.name}.pem"
     filename = "${path.module}/connect.sh"
+
+  provisioner "local-exec" {
+    when = destroy
+    command = "ssh-keygen -f '~/.ssh/known_hosts' -R '${var.vm.ip}'"
+  }
+
 }
 
-#data "local_file" "ssh_public_key" {
-#  filename = "${path.module}/id_rsa.pub"
-#}
+resource "proxmox_virtual_environment_file" "cloud_config" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "proxmox"
 
-#resource "null_resource" "copy_file_on_vm" {
-#  depends_on = [
-#    proxmox_virtual_environment_vm.ubuntu_vm,
-#    local_sensitive_file.cloud_pem
-#  ]
-#  triggers = {
-#    always_run = timestamp()
-#  }
-#  
-#  connection {
-#    type        = "ssh"
-#    user        = "${var.vm.username}"
-#    private_key = tls_private_key.ubuntu_vm_key.private_key_pem
-#    host        = "${var.vm.ip}"
-#  }
-#  provisioner "remote-exec" {
-#    inline = [
-#      "sudo apt update",
-#      "sudo apt upgrade -y"
-#    ]
-#  }
-#}
+  source_raw {
+    data = <<-EOF
+    #cloud-config
+    users:
+      - default
+      - name: ${var.vm.username}
+        groups:
+          - sudo
+        shell: /bin/bash
+        ssh_authorized_keys:
+          - ${trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)}
+        sudo: ALL=(ALL) NOPASSWD:ALL
+    runcmd:
+        - apt update >> /tmp/cloud-config
+        - apt upgrade -y >> /tmp/cloud-config
+        - apt install -y qemu-guest-agent net-tools >> /tmp/cloud-config
+        - timedatectl set-timezone Europe/Bratislava >> /tmp/cloud-config
+        - systemctl enable qemu-guest-agent >> /tmp/cloud-config
+        - systemctl start qemu-guest-agent >> /tmp/cloud-config
+        - snap install microk8s --classic --channel=1.30 >> /tmp/cloud-config
+        - sudo usermod -a -G microk8s ${var.vm.username} >> /tmp/cloud-config
+        - mkdir -p ~/.kube >> /tmp/cloud-config
+        - chmod 0700 ~/.kube >> /tmp/cloud-config
+        - microk8s enable dns >> /tmp/cloud-config
+        - microk8s enable hostpath-storage >> /tmp/cloud-config
+        - microk8s start >> /tmp/cloud-config
+        - echo "done" > /tmp/cloud-config.done
+    EOF
+
+    file_name = "cloud-config.yaml"
+  }
+}
