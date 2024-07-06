@@ -92,7 +92,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     datastore_id = var.virtual_environment.datastore_id
   }
 
-  serial_device {}
+  #serial_device {}
 }
 
 resource "proxmox_virtual_environment_download_file" "image" {
@@ -116,7 +116,6 @@ resource "tls_private_key" "ubuntu_vm_key" {
 }
 
 resource "local_sensitive_file" "cloud_pem" { 
-  #filename = "${path.module}/privkey.pem"
   filename = pathexpand("~/.ssh/${var.project.name}.pem")
   content = tls_private_key.ubuntu_vm_key.private_key_pem
 }
