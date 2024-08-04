@@ -50,6 +50,10 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     }
   }
 
+  memory {
+    swap = 512
+  }
+
   disk {
     datastore_id = var.virtual_environment.datastore_id
   }
