@@ -56,9 +56,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 
 
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_lxc_img.id
-    # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
-    # template_file_id = "local:vztmpl/jammy-server-cloudimg-amd64.tar.gz"
+    template_file_id = proxmox_virtual_environment_download_file.ct_image.id
     type             = "ubuntu"
   }
 
@@ -69,12 +67,12 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
 }
 
-resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc_img" {
-  file_name = "${var.project.name}-ubuntu-image.tar.gz"
+resource "proxmox_virtual_environment_download_file" "ct_image" {
+  file_name = "${var.project.name}-ubuntu-24.04-lts-image.tar.xz"
   content_type = "vztmpl"
   datastore_id = "local"
   node_name = var.virtual_environment.node_name
-  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.tar.gz"
+  url          = "https://images.linuxcontainers.org/images/ubuntu/noble/amd64/default/20240730_07%3A42/rootfs.tar.xz"
 }
 
 resource "random_password" "ubuntu_container_password" {
