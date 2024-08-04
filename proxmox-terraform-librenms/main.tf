@@ -28,7 +28,6 @@ provider "proxmox" {
 
 resource "proxmox_virtual_environment_container" "ubuntu_container" {
   description = "Managed by Terraform"
-  vm_id     = 1234
 
   node_name = var.virtual_environment.node_name
 
