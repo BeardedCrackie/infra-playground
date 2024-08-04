@@ -77,6 +77,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 }
 
 resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc_img" {
+  file_name = "${var.project.name}-ubuntu-image.tar.gz"
   content_type = "vztmpl"
   datastore_id = "local"
   node_name = var.virtual_environment.node_name
