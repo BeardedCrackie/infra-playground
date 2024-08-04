@@ -56,7 +56,10 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   disk {
     datastore_id = var.virtual_environment.datastore_id
   }
-
+  
+  network_interface {
+    name = "veth0"
+  }
 
   operating_system {
     template_file_id = proxmox_virtual_environment_download_file.ct_image.id
