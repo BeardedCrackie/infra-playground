@@ -85,7 +85,7 @@ resource "proxmox_virtual_environment_download_file" "ct_image" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name = var.virtual_environment.node_name
-  url          = "https://fra1lxdmirror01.do.letsbuildthe.cloud/images/ubuntu/noble/amd64/default/20240806_07%3A42/rootfs.tar.xz"
+  url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.tar.gz"
 }
 
 resource "random_password" "ubuntu_container_password" {
