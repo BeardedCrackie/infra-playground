@@ -1,0 +1,14 @@
+---
+- name: Create MinIO bucket
+  hosts: localhost
+  gather_facts: false
+
+  vars_prompt:
+    - name: bucket_name
+      prompt: "Enter the bucket name:"
+      private: false
+
+  tasks:
+    - name: Create MinIO bucket
+      command: >
+        mc mb myminio/{{ bucket_name }}
