@@ -139,6 +139,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   source_raw {
     data = <<-EOF
     #cloud-config
+    hostname: ${var.project.name}-${var.vm_name}-${count.index + 1}
     users:
       - default
       - name: ${var.vm.username}
