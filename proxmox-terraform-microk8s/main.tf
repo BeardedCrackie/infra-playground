@@ -130,25 +130,6 @@ resource "local_sensitive_file" "cloud_public" {
   content = tls_private_key.ubuntu_vm_key.public_key_openssh
 }
 
-output "ubuntu_vm_password" {
-  value     = random_password.ubuntu_vm_password.result
-  sensitive = true
-}
-
-output "ubuntu_vm_private_key" {
-  value     = tls_private_key.ubuntu_vm_key.private_key_pem
-  sensitive = true
-}
-
-output "ubuntu_vm_public_key" {
-  value = tls_private_key.ubuntu_vm_key.public_key_openssh
-}
-
-resource "local_file" "connect_script" {
-    content     = "ssh ${var.vm.username}@${var.vm.ip} -i ~/.ssh/${var.project.name}.pem"
-    filename = "${path.module}/connect.sh"
-}
-
 resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
@@ -164,7 +145,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
           - sudo
         shell: /bin/bash
         ssh_authorized_keys:
-          - ${trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)}
+          - ${local.public_key_content}
         sudo: ALL=(ALL) NOPASSWD:ALL
     runcmd:
         - apt update >> /tmp/cloud-config
