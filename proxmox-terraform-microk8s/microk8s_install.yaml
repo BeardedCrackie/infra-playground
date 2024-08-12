@@ -1,0 +1,43 @@
+---
+- name: Install and configure MicroK8s cluster
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install MicroK8s
+      snap:
+        name: microk8s
+        state: latest
+        classic: yes
+
+    - name: Add user to microk8s group
+      user:
+        name: "{{ ansible_user }}"
+        groups: microk8s
+        append: yes
+
+    - name: Enable MicroK8s addons
+      command: microk8s enable dns storage
+      register: microk8s_enable_addons
+      changed_when: "'Nothing to do' not in microk8s_enable_addons.stdout"
+
+    - name: Wait for MicroK8s to be ready
+      command: microk8s status --wait-ready
+
+    - name: Get join command for master node
+      command: microk8s add-node
+      register: join_command
+      when: inventory_hostname == groups['my_project'][0]
+
+    - name: Set fact for join command
+      set_fact:
+        join_command: "{{ hostvars[groups['my_project'][0]].join_command.stdout }}"
+      when: inventory_hostname != groups['my_project'][0]
+
+    - name: Join other nodes to the cluster
+      command: "{{ join_command }}"
+      when: inventory_hostname != groups['my_project'][0]

@@ -180,3 +180,18 @@ resource "ansible_host" "host" {
     some        = "variable"
   }
 }
+
+resource "local_file" "inventory" {
+  content  = templatefile("${path.module}/inventory.tpl", {
+    hosts = ansible_host.host[*]
+  })
+  filename = "${path.module}/inventory.yaml"
+}
+
+resource "null_resource" "run_ansible_playbook" {
+  provisioner "local-exec" {
+    command = "ansible-playbook -i ${local_file.inventory.filename} ${path.module}/microk8s_install.yaml"
+  }
+
+  depends_on = [ansible_host.host, local_file.inventory]
+}

@@ -5,5 +5,5 @@ output "ubuntu_vm_password" {
 }
 
 output "vm_ipv4_address" {
-  value = proxmox_virtual_environment_vm.ubuntu_vm.ipv4_addresses[1][0]
+  value = proxmox_virtual_environment_vm.ubuntu_vm[*].ipv4_addresses[1][0]
 }
