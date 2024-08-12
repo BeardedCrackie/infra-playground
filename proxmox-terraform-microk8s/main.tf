@@ -30,7 +30,7 @@ provider "proxmox" {
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name        = "${var.project.name}-${var.vm_name}"
   description = "Managed by Terraform"
-  tags        = ["terraform", "ubuntu"]
+  tags        = ["terraform", "ubuntu", "ansible", "microk8s"]
   started = true
 
   #timeout in seconds
@@ -154,16 +154,8 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
         - timedatectl set-timezone Europe/Bratislava >> /tmp/cloud-config
         - systemctl enable qemu-guest-agent >> /tmp/cloud-config
         - systemctl start qemu-guest-agent >> /tmp/cloud-config
-        - snap install microk8s --classic --channel=1.30 >> /tmp/cloud-config
-        - sudo usermod -a -G microk8s ${var.vm.username} >> /tmp/cloud-config
-        - mkdir -p ~/.kube >> /tmp/cloud-config
-        - chmod 0700 ~/.kube >> /tmp/cloud-config
-        - microk8s enable dns >> /tmp/cloud-config
-        - microk8s enable hostpath-storage >> /tmp/cloud-config
-        - microk8s start >> /tmp/cloud-config
         - echo "done" > /tmp/cloud-config.done
     EOF
-
     file_name = "cloud-config.yaml"
   }
 }
