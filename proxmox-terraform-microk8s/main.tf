@@ -71,8 +71,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     datastore_id = var.virtual_environment.datastore_id
     ip_config {
       ipv4 {
-        address = "${var.vm.ip}/${var.vm.prefix}"
-        gateway = "${var.vm.gw}"
+        #address = "${var.vm.ip}/${var.vm.prefix}"
+        #gateway = "${var.vm.gw}"
+        address = "dhcp"
       }
     }
 
@@ -168,7 +169,8 @@ resource "ansible_host" "host" {
   name     = "${var.project.name}-${var.vm_name}"
   groups = ["${var.project.name}"]
   variables = {
-    ansible_host = "${var.vm.ip}"
+    #ansible_host = "${output.vm_ipv4_address}"
+    ansible_host = "${proxmox_virtual_environment_vm.ubuntu_vm[count.index].ipv4_addresses[1][0]}"
     ansible_user = "${var.vm.username}"
     ansible_ssh_private_key_file = local.priv_key_content
     ansible_python_interpreter = "/usr/bin/python3"
