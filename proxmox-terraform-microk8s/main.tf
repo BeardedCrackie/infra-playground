@@ -1,4 +1,3 @@
-
 terraform {
   required_providers {
     proxmox = {
@@ -28,7 +27,8 @@ provider "proxmox" {
 }
 
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
-  name        = "${var.project.name}-${var.vm_name}"
+  count      = 3
+  name       = "${var.project.name}-${var.vm_name}-${count.index + 1}"
   description = "Managed by Terraform"
   tags        = ["terraform", "ubuntu", "ansible", "microk8s"]
   started = true
@@ -166,8 +166,9 @@ resource "ansible_group" "group" {
 }
 
 resource "ansible_host" "host" {
-  name     = "${var.project.name}-${var.vm_name}"
-  groups = ["${var.project.name}"]
+  count     = 3
+  name      = "${var.project.name}-${var.vm_name}-${count.index + 1}"
+  groups    = ["${var.project.name}"]
   variables = {
     #ansible_host = "${output.vm_ipv4_address}"
     ansible_host = "${proxmox_virtual_environment_vm.ubuntu_vm[count.index].ipv4_addresses[1][0]}"
