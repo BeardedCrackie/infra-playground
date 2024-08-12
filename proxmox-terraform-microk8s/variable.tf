@@ -46,8 +46,14 @@ variable "vm_name" {
     default = "vm"
 }
 
-variable "priv_key" {
+variable "priv_key_path" {
     type = string
+    description = "Path to the public key file"
+    default     = "~/.ssh/id_rsa"
+}
+
+locals {
+  priv_key_content = file(pathexpand(var.priv_key_path))
 }
 
 variable "public_key_path" {
