@@ -53,7 +53,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     datastore_id = var.virtual_environment.datastore_id
     file_id      = proxmox_virtual_environment_download_file.image.id
     interface    = "virtio0"
-    #file_format = "raw"
+    file_format = "raw"
     iothread     = true
     discard      = "on"
     size         = 20
