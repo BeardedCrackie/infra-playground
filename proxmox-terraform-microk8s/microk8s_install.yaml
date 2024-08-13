@@ -11,7 +11,7 @@
     - name: Install MicroK8s
       snap:
         name: microk8s
-        state: latest
+        state: present
         classic: yes
 
     - name: Add user to microk8s group
