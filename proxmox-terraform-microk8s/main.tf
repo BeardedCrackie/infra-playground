@@ -4,14 +4,6 @@ terraform {
       source = "bpg/proxmox"
       version = "0.60.1"
     }
-    null = {
-      source = "hashicorp/null"
-      version = "3.2.2"
-    }
-    ansible = {
-      version = "~> 1.3.0"
-      source  = "ansible/ansible"
-    }
   }
 }
 
@@ -162,36 +154,12 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   }
 }
 
-resource "ansible_group" "group" {
-  name     = "${var.project.name}"
-}
-
-resource "ansible_host" "host" {
-  count     = 3
-  name      = "${var.project.name}-${var.vm_name}-${count.index + 1}"
-  groups    = ["${var.project.name}"]
-  variables = {
-    #ansible_host = "${output.vm_ipv4_address}"
-    ansible_host = "${proxmox_virtual_environment_vm.ubuntu_vm[count.index].ipv4_addresses[1][0]}"
-    ansible_user = "${var.vm.username}"
-    ansible_ssh_private_key_file = local.priv_key_content
-    ansible_python_interpreter = "/usr/bin/python3"
-    greetings   = "from host!"
-    some        = "variable"
-  }
-}
-
-resource "local_file" "inventory" {
-  content  = templatefile("${path.module}/inventory.tpl", {
-    hosts = ansible_host.host[*]
-  })
-  filename = "${path.module}/inventory.yaml"
-}
-
-resource "null_resource" "run_ansible_playbook" {
-  provisioner "local-exec" {
-    command = "ansible-playbook -i ${local_file.inventory.filename} ${path.module}/microk8s_install.yaml"
-  }
-
-  depends_on = [ansible_host.host, local_file.inventory]
+resource "local_file" "ansible_inventory" {
+  filename = "ansible_inventory.ini"
+  content  = <<-EOF
+    [${var.project.name}]
+    ${join("\n", [for i in range(3) : "${var.project.name}-${var.vm_name}-${i+1} ansible_host=${proxmox_virtual_environment_vm.ubuntu_vm[i].ipv4_addresses[1][0]} ansible_user=${var.vm.username} ansible_ssh_private_key_file=${var.priv_key_path} ansible_python_interpreter=/usr/bin/python3"])}
+    [all:vars]
+    ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+  EOF
 }
