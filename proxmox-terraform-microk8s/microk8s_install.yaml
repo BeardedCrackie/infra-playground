@@ -25,19 +25,31 @@
       register: microk8s_enable_addons
       changed_when: "'Nothing to do' not in microk8s_enable_addons.stdout"
 
-    - name: Wait for MicroK8s to be ready
+    - name: Enable HA MicroK8s services
+      command: microk8s enable ha-cluster
+
+    - name: Wait for the MicroK8s API server to be ready
       command: microk8s status --wait-ready
 
-    - name: Get join command for master node
-      command: microk8s add-node
+    - name: Get the join command from microk8s-vm-1
+      shell: "microk8s add-node | grep 'microk8s join' | head -n 1"
       register: join_command
-      when: inventory_hostname == groups['my_project'][0]
+      when: inventory_hostname == 'microk8s-vm-1'
 
-    - name: Set fact for join command
+    - name: Register the join command for other nodes
       set_fact:
-        join_command: "{{ hostvars[groups['my_project'][0]].join_command.stdout }}"
-      when: inventory_hostname != groups['my_project'][0]
+        join_command: "{{ hostvars['microk8s-vm-1'].join_command.stdout }}"
+      when: inventory_hostname != 'microk8s-vm-1'
 
-    - name: Join other nodes to the cluster
-      command: "{{ join_command }}"
-      when: inventory_hostname != groups['my_project'][0]
+    - name: Join the cluster (with retries)
+      shell: "{{ join_command }}"
+      register: join_output
+      retries: 5
+      delay: 10
+      until: join_output.rc == 0
+      when: inventory_hostname != 'microk8s-vm-1'
+
+    - name: Display join result
+      debug:
+        msg: "{{ join_command }}"
+      when: inventory_hostname != 'microk8s-vm-1'
