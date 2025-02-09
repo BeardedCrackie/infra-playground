@@ -1,0 +1,50 @@
+---
+  - name: Openstack init
+    hosts: openstack_controller
+    become: yes
+    become_method: sudo
+    tasks:
+
+### etcd ###
+
+    - name: Install the package "etcd "
+      ansible.builtin.apt:
+        name: etcd 
+
+    - name: Change ETCD_INITIAL_CLUSTER
+      lineinfile:
+        dest: /etc/default/etcd
+        regexp: 'ETCD_INITIAL_CLUSTER=*'
+        line: 'ETCD_INITIAL_CLUSTER="controller=http://{{ openstack_host }}:2380"'
+        state: present
+
+    - name: Change ETCD_INITIAL_ADVERTISE_PEER_URLS
+      lineinfile:
+        dest: /etc/default/etcd
+        regexp: 'ETCD_INITIAL_ADVERTISE_PEER_URLS=*'
+        line: 'ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ openstack_host }}:2380"'
+        state: present
+
+    - name: Change ETCD_ADVERTISE_CLIENT_URLS
+      lineinfile:
+        dest: /etc/default/etcd
+        regexp: 'ETCD_ADVERTISE_CLIENT_URLS=*'
+        line: 'ETCD_ADVERTISE_CLIENT_URLS="http://{{ openstack_host }}:2379"'
+        state: present
+
+    - name: Change ETCD_LISTEN_CLIENT_URLS 
+      lineinfile:
+        dest: /etc/default/etcd
+        regexp: 'ETCD_LISTEN_CLIENT_URLS=*'
+        line: 'ETCD_LISTEN_CLIENT_URLS="http://{{ openstack_host }}:2379"'
+        state: present
+
+    - name: Restart service etcd
+      ansible.builtin.service:
+        name: etcd
+        state: started
+
+    - name: Restart service etcd
+      ansible.builtin.service:
+        name: etcd
+        state: restarted

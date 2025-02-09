@@ -1,0 +1,25 @@
+---
+- name: Server init package
+  hosts: localhost
+  module_defaults:
+    community.general.proxmox_kvm:
+      api_host: "{{ proxmox.host }}" 
+      api_user: "{{ proxmox.user }}"
+      api_password: "{{ proxmox.password }}"
+      node: "{{ proxmox.node }}"
+  vars:
+    group_name: "microk8s"
+    vm_tags: "ansible,ubuntu"
+    gateway: "192.168.0.1"
+    vm_nameservers: ["8.8.8.8"]
+    vm_to_clone: "Template-Ubuntu-cloud-23.02"
+    vm_secret: "{{ proxmox_vm.secret }}"
+    vm_username: "{{ proxmox_vm.username }}"
+    vm_ssh_public_key: "{{ proxmox_vm.ssh_public_key }}"
+  tasks:
+  
+  - name: delete VMs
+    community.general.proxmox_kvm:
+      state: absent
+      name: "{{ item }}"
+    loop: "{{ groups[group_name] }}"

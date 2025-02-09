@@ -1,0 +1,17 @@
+
+---
+  - name: Server init package
+    hosts: servers
+    become: yes
+    become_method: sudo
+    tasks:
+     - name: Update repositories cache and install "nano" package 
+       ansible.builtin.apt:
+        name: nano
+        state: present
+        update_cache: yes
+
+#    - name: Add specified repository into sources list
+#      ansible.builtin.apt_repository:
+#        repo: deb cloud-archive:yoga/stable
+#        state: absent

@@ -1,0 +1,10 @@
+---
+  - name: Openstack init package
+    hosts: openstack
+    become: yes
+    become_method: sudo
+    tasks:
+
+    - name: Install the package "python3-openstackclient"
+      ansible.builtin.apt:
+        name: python3-openstackclient

@@ -1,0 +1,48 @@
+
+---
+- name: Server init package
+  hosts: localhost
+  module_defaults:
+    community.general.proxmox_kvm:
+      api_host: "{{ proxmox.host }}" 
+      api_user: "{{ proxmox.user }}"
+      api_password: "{{ proxmox.password }}"
+      node: "{{ proxmox.node }}"
+  vars:
+    group_name: "microk8s"
+    vm_tags: "ansible,ubuntu"
+    gateway: "192.168.0.1"
+    vm_nameservers: ["8.8.8.8"]
+    vm_to_clone: "Template-Ubuntu-cloud-23.02"
+    vm_secret: "{{ proxmox_vm.secret }}"
+    vm_username: "{{ proxmox_vm.username }}"
+    vm_ssh_public_key: "{{ proxmox_vm.ssh_public_key }}"
+  tasks:
+  
+  - name: Clone cloud-init template
+    community.general.proxmox_kvm:
+      clone: "{{ vm_to_clone }}"
+      timeout: 90
+      proxmox_default_behavior: "no_defaults"
+      name: "{{ item }}"
+      tags: "{{ vm_tags }}"
+    loop: "{{ groups[group_name] }}"
+
+  - name: Cloud-Init
+    community.general.proxmox_kvm:
+      sshkeys: "{{ vm_ssh_public_key }}"
+      ciuser: "{{ vm_username }}"
+      cipassword: "{{ vm_secret }}"
+      nameservers: "{{ vm_nameservers }}" 
+      ipconfig:
+        ipconfig0: "ip={{ hostvars[item].ansible_host }}/24,gw={{ gateway }}"
+      update: true
+      proxmox_default_behavior: "no_defaults"
+      name: "{{ item }}"
+    loop: "{{ groups[group_name] }}"
+
+  - name: Start VM
+    community.general.proxmox_kvm:
+      state: started
+      name: "{{ item }}"
+    loop: "{{ groups[group_name] }}"

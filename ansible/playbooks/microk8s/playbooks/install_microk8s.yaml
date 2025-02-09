@@ -1,0 +1,9 @@
+---
+- name: Playbook to install microk8s
+  hosts: microk8s
+  become: true
+  tasks:
+    - name: Ansible snap install microk8s
+      community.general.snap:
+        name: microk8s
+        classic: true

@@ -1,0 +1,49 @@
+---
+- name: RouterOS test with network_cli connection
+  hosts: mikrotik
+  gather_facts: false
+  tasks:
+    - name: Run a command
+      community.routeros.command:
+        commands:
+          - /system package update check-for-updates
+      register: system_update
+
+    - name: Print its output
+      ansible.builtin.debug:
+        var: system_update.stdout
+
+    - name: Update system
+      community.routeros.command:
+        commands:
+          - /system package update download
+          - /system package update install
+#      debug:
+#        msg: "{{ item }}"
+#      when: "'TRUE' in item"
+#      loop: "{{ RESULT.STDOUT_LINES }}" 
+#      when: system_update.stdout.find('New version is available') != -1
+      register: system_update_install
+
+
+    - name: Wait for port 22 to become open on the host, don't start checking for 180 seconds
+      community.routeros.command:
+        commands:
+          - /system reboot
+          - Y
+    - name: wait for 180 sec
+      ansible.builtin.wait_for:
+        timeout: 120
+
+    - name: Update system print
+      ansible.builtin.debug:
+        var: system_update_install.stdout
+
+    - name: Retrieve facts
+      community.routeros.facts:
+    - ansible.builtin.debug:
+        msg: "First IP address: {{ ansible_net_all_ipv4_addresses[0] }}"
+
+#    - name: Print all available facts
+#      ansible.builtin.debug:
+#        var: ansible_facts

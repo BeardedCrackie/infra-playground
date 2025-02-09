@@ -1,0 +1,16 @@
+---
+  - name: Openstack init network
+    hosts: openstack
+    become: yes
+    become_method: sudo
+    tasks:
+
+    - name: Add IP address of all hosts to all hosts
+      lineinfile:
+        dest: /etc/hosts
+        regexp: '.*{{ item }}$'
+        line: "{{ hostvars[item].openstack_host }} {{item}}"
+        state: present
+      when: hostvars[item].openstack_host is defined
+      with_items: "{{ groups.openstack }}"
+

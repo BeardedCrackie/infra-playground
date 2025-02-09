@@ -1,0 +1,11 @@
+- name: Manage power state of the first device
+  hosts: localhost
+  tasks:
+  - name: Manage power state of the first device
+    dellemc.openmanage.redfish_powerstate:
+      validate_certs: false
+      baseuri: "{{ dell.idrac.uri }}"
+      username: "{{ dell.idrac.user }}"
+      password: "{{ dell.idrac.password }}"
+      reset_type: "GracefulShutdown"
+        

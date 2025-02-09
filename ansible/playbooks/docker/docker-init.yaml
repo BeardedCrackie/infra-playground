@@ -1,0 +1,42 @@
+
+---
+  - name: Server init package
+    hosts: "{{ variable_host }}"
+    become: yes
+    become_method: sudo
+    tasks:
+     - name: Update repositories cache and install packages
+       ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: yes
+
+     - name: Add Docker GPG apt Key
+       apt_key:
+         url: https://download.docker.com/linux/ubuntu/gpg
+         state: present
+
+     - name: Add Docker Repository
+       apt_repository:
+         repo: deb https://download.docker.com/linux/ubuntu focal stable
+         state: present
+
+     - name: Update apt and install docker-ce
+       ansible.builtin.apt:
+         name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+         state: latest
+         update_cache: true
+
+
+#    - name: Add specified repository into sources list
+#      ansible.builtin.apt_repository:
+#        repo: deb cloud-archive:yoga/stable
+#        state: absent

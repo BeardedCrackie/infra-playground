@@ -1,0 +1,28 @@
+---
+  - name: Openstack init
+    hosts: openstack_controller
+    become: yes
+    become_method: sudo
+    tasks:
+
+### Memcached ###
+
+    - name: Install the package "memcached "
+      ansible.builtin.apt:
+        name: memcached 
+
+    - name: Install the package "python3-memcache"
+      ansible.builtin.apt:
+        name: python3-memcache
+
+    - name: Add IP address of all hosts to all hosts
+      lineinfile:
+        dest: /etc/memcached.conf
+        regexp: '-l *'
+        line: "-l {{ openstack_host }}"
+        state: present
+
+    - name: Restart service memcached
+      ansible.builtin.service:
+        name: memcached
+        state: restarted

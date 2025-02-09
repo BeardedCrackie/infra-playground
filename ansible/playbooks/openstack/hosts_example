@@ -1,0 +1,23 @@
+openstack:
+  children:
+    openstack_controller:
+      hosts:
+        controller:
+          ansible_host: 192.168.0.30
+          openstack_host: 192.168.1.30
+          rabbit_pass: RABBIT_PASS
+          ntp_server: 3.sk.pool.ntp.org
+    openstack_compute:
+      hosts:
+        node1:
+          ansible_host: 192.168.0.31
+          openstack_host: 192.168.1.31
+        node2:
+          ansible_host: 192.168.0.32
+          openstack_host: 192.168.1.32
+  vars:
+    ansible_user: potociarm
+    ansible_ssh_pass: admpassw
+    ansible_become_pass: admpassw
+    cluster_cidr: 192.168.1.0/24
+    controller_ip: 192.168.1.30
