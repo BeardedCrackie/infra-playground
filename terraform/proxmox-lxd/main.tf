@@ -78,7 +78,7 @@ resource "proxmox_virtual_environment_download_file" "ct_image" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name = var.virtual_environment.node_name
-  url          = "https://images.linuxcontainers.org/images/ubuntu/noble/amd64/default/20240730_07%3A42/rootfs.tar.xz"
+  url          = var.image_url
 }
 
 resource "random_password" "ubuntu_container_password" {
