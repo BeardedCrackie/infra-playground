@@ -1,0 +1,23 @@
+microk8s:
+  hosts:
+    microk8s-node-1:
+      ansible_host: 192.168.0.40
+    microk8s-node-2:
+      ansible_host: 192.168.0.41
+    microk8s-node-3:
+      ansible_host: 192.168.0.42
+  vars:
+    ansible_user: "ubuntu"
+    load_balancer_ip_ranges: "192.168.0.230-192.168.0.240,192.168.5.100-192.168.5.200,192.168.70/24"
+    gateway: "192.168.0.1"
+    dns_servers:
+      - "192.168.0.1"
+      - "8.8.8.8"
+
+all:
+  vars:
+    project_name: "microk8s"
+    ssl_dir: "/etc/ssl/microk8s/ssl"
+    kubeconfig: ~/.kube/microk8s_config
+    ingress_host: "k8s.local" 
+
