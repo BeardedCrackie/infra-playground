@@ -1,7 +1,7 @@
 ---
 - hosts: microk8s
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   tasks:
     - name: Perform a dist-upgrade.
