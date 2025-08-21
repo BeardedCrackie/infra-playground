@@ -1,0 +1,77 @@
+---
+- name: Create microk8s cluster
+  hosts: microk8s
+
+  roles:
+    - role: istvano.microk8s
+      vars:
+        microk8s_version: "1.32/stable"
+        microk8s_plugins:
+          dns: false
+          istio: true
+          ingress: true
+          helm: true                             # Helm 3
+          helm3: false                             # helm3 is not supported, instead use helm
+          hostpath-storage: true
+          metallb: "{{ load_balancer_ip_ranges }}"
+        users: 
+          - "{{ ansible_user }}"
+        microk8s_enable_HA: true # enable high-availability?
+        microk8s_group_HA: "microk8s" # hostgroup whose members will form high-availability cluster
+  tasks:
+    - name: enable dns with provided upstream
+      command: "microk8s.enable dns:{{ dns_servers | join(',') }}"
+  tags: [cluster]
+
+- name: Generate kubeconfig
+  hosts: microk8s
+  tasks:
+    - name: Generate microk8s kubeconfig
+      include_tasks: tasks/microk8s_generate_kubeconfig.yaml
+
+    - name: Get microk8s kubeconfig
+      include_tasks: tasks/microk8s_get_kubeconfig.yaml
+  tags: [kubeconfig]
+
+- name: Distribute ssl certificates to hosts
+  hosts: microk8s
+  become: true
+  vars:
+    ca_cert_file: "{{ ssl_dir }}/ca.crt"
+  tasks:
+    - name: distribute ssl certificates to hosts
+      include_tasks: tasks/hosts-distribute-ssl.yaml
+  tags: [ssl]
+
+- name: Import ssl certificates to k8s
+  hosts: localhost
+  become: true
+  tasks:
+    - name: import ssl certificates to k8s
+      include_tasks: tasks/k8s-import-ssl.yaml
+  vars:
+    ca_cert_file: "{{ ssl_dir }}/ca.crt"
+    wildcard_key_file: "{{ ssl_dir }}/wildcard.k8s.local.key"
+    wildcard_cert_file: "{{ ssl_dir }}/wildcard.k8s.local.crt"
+    target_namespace: ingress
+    secret_name: wildcard-k8s-local-tls
+  tags: [ssl]
+
+- name: Setup applications"
+  hosts: localhost
+  tags: [app]
+  vars:
+    secret_name: wildcard-k8s-local-tls
+    target_namespace: ingress
+  tasks:
+    - name: Setup ingress
+      include_tasks: tasks/k8s-setup-ingress.yaml
+    - name: Install Tekton manifests
+      kubernetes.core.k8s:
+        state: present
+        src: https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+        kubeconfig: "{{ kubeconfig }}"
+    - name: Install kube-prometheus-stack via Helm
+      include_tasks: tasks/k8s-setup-monitoring.yaml
+    - name: Install ArgoCD
+      include_tasks: tasks/k8s-setup-argo.yaml

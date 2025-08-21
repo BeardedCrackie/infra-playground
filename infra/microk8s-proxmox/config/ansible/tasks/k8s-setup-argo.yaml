@@ -1,0 +1,73 @@
+---
+- name: Create argocd namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: argocd
+    state: present
+
+- name: Install ArgoCD manifests
+  kubernetes.core.k8s:
+    state: present
+    namespace: argocd
+    src: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+- name: Create Argo http Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: argocd-server-http-ingress
+        namespace: argocd
+        labels:
+          app: argocd
+        annotations:
+          nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      spec:
+        ingressClassName: nginx
+        rules:
+          - host: "argocd.{{ ingress_host }}"
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: argocd-server
+                      port:
+                        name: http
+
+- name: Create Argo http Ingress
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: argocd-server-grpc-ingress
+        namespace: argocd
+        labels:
+          app: argocd
+        annotations:
+          nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+      spec:
+        ingressClassName: nginx
+        rules:
+          - host: "grpc.argocd.{{ ingress_host }}"
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: argocd-server
+                      port:
+                        name: https
+
+- name: Install Argo root application manifests
+  kubernetes.core.k8s:
+    state: present
+    src: ../../gitops/argocd/root-app.yaml

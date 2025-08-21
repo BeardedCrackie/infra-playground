@@ -1,0 +1,13 @@
+virtual_environment = {
+    password = "upassword"
+    endpoint = "https://ip_address:8006/"
+    username = "user@realm"
+    node_name = "proxmox"
+    datastore_id = "local-zfs"
+}
+
+project_name = "ubuntu-test-cloud-provision"
+vm_username = "ubuntu"
+
+priv_key_path = "~/.ssh/id_ed25519"
+public_key_path = "~/.ssh/id_ed25519.pub"

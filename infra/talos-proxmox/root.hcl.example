@@ -1,0 +1,37 @@
+
+remote_state {
+  backend = "s3"
+  generate = {
+    path      = "backend.tf"
+    if_exists = "overwrite"
+  }
+  config = {
+    endpoints = {
+      s3 = "http://<MinioIp>:9000" # use web port, not admin
+    }
+    bucket                      = "<BucketName>
+    key                         = "${path_relative_to_include()}/terraform.tfstate"
+    region                      = "us-east-1"
+    access_key                  = "<AccessKey>"
+    secret_key                  = "<SecretKey>"
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_requesting_account_id  = true
+    force_path_style            = true
+
+  }
+}
+
+inputs = {
+    virtual_environment={
+        password     = "As4arj8cP8@p#tza^m@oEC!!D"
+        endpoint     = "https://192.168.0.20:8006/api2/json"
+        username     = "potociarm@pam"
+        node_name    = "proxmox"
+        datastore_id = "ssd-lvm"
+    }
+    project_name      = "devops-playground"
+    priv_key_path     = "~/.ssh/id_ed25519"
+    cluster_name      = "devops-playground-mngmt"
+    metallb_ip_pool   = "192.168.0.40"
+}

@@ -1,0 +1,16 @@
+terraform {
+  backend "s3" {
+    endpoints = {
+      s3 = "http://<minio-host>:<port>" #use web port, not admin
+    }
+    bucket                      = "<bucket>>"
+    key                         = "<pathOfState/terraform.tfstate>"
+    region                      = "us-east-1"
+    access_key                  = "<access_key>"
+    secret_key                  = "<secret_key>"
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    use_path_style              = true
+    skip_requesting_account_id  = true
+  }
+}

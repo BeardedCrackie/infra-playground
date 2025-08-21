@@ -1,0 +1,55 @@
+---
+
+- name: Patch nginx-ingress-microk8s-controller args
+  kubernetes.core.k8s:
+    state: present
+    namespace: ingress
+    kind: DaemonSet
+    name: nginx-ingress-microk8s-controller
+    merge_type:
+      - strategic-merge
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: nginx-ingress-microk8s
+                args:
+                  - /nginx-ingress-controller
+                  - --configmap=$(POD_NAMESPACE)/nginx-load-balancer-microk8s-conf
+                  - --tcp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-tcp-microk8s-conf
+                  - --udp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-udp-microk8s-conf
+                  - --ingress-class=public
+                  - --publish-status-address=127.0.0.1
+                  - --default-ssl-certificate={{ target_namespace }}/{{ secret_name }}
+
+- name: Create LoadBalancer service for ingress
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ingress
+        namespace: "{{ target_namespace }}"
+      spec:
+        selector:
+          name: nginx-ingress-microk8s
+        type: LoadBalancer
+        # loadBalancerIP is optional. MetalLB will automatically allocate an IP 
+        # from its pool if not specified. You can also specify one manually.
+        # loadBalancerIP: x.y.z.a
+        ports:
+          - name: http
+            protocol: TCP
+            port: 80
+            targetPort: 80
+          - name: https
+            protocol: TCP
+            port: 443
+            targetPort: 443
+
+- name: Restart nginx-ingress controller to apply SSL certificate
+  shell: kubectl rollout restart daemonset/nginx-ingress-microk8s-controller -n {{ target_namespace }} --kubeconfig {{ kubeconfig }}
+  become: false
+

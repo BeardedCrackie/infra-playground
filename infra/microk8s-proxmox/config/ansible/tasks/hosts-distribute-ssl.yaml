@@ -1,0 +1,51 @@
+---
+- name: Create SSL scripts directory on remote hosts
+  file:
+    path: "{{ ssl_dir }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create SSL scripts directory on remote hosts
+  file:
+    path: "/var/snap/{{ project_name }}/current/certs.d/registry.{{ ingress_host }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Copy CA certificate to remote hosts
+  copy:
+    src: "{{ ca_cert_file }}"
+    dest: "{{ ca_cert_file }}"
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Copy CA certificate to remote hosts
+  copy:
+    src: "{{ ca_cert_file }}"
+    dest: "/var/snap/{{ project_name }}/current/certs.d/registry.{{ ingress_host }}/ca.crt"
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Install CA certificate to system trust store (Ubuntu/Debian)
+  block:
+    - name: Copy CA certificate to trusted certificates directory
+      copy:
+        src: "{{ ca_cert_file }}"
+        dest: /usr/local/share/ca-certificates/k8s-local-ca.crt
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Update CA certificates
+      command: update-ca-certificates
+      register: update_result
+
+    - name: Display CA certificate update result
+      debug:
+        msg: "CA certificate update result: {{ update_result.stdout }}"
+  when: ansible_os_family == "Debian"
