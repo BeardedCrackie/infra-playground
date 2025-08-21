@@ -26,7 +26,7 @@ provider "proxmox" {
 
 
 
-resource "proxmox_virtual_environment_container" "ubuntu_container" {
+resource "proxmox_virtual_environment_container" "container" {
   description = "Managed by Terraform"
 
   node_name = var.virtual_environment.node_name
@@ -43,9 +43,9 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 
     user_account {
       keys = [
-        trimspace(tls_private_key.ubuntu_container_key.public_key_openssh)
+        trimspace(tls_private_key.container_key.public_key_openssh)
       ]
-      password = random_password.ubuntu_container_password.result
+      password = random_password.container_password.result
     }
   }
 
@@ -81,28 +81,28 @@ resource "proxmox_virtual_environment_download_file" "ct_image" {
   url          = var.image_url
 }
 
-resource "random_password" "ubuntu_container_password" {
+resource "random_password" "container_password" {
   length           = 16
   override_special = "_%@"
   special          = true
 }
 
-resource "tls_private_key" "ubuntu_container_key" {
+resource "tls_private_key" "container_key" {
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
-output "ubuntu_container_password" {
-  value     = random_password.ubuntu_container_password.result
+output "container_password" {
+  value     = random_password.container_password.result
   sensitive = true
 }
 
-output "ubuntu_container_private_key" {
-  value     = tls_private_key.ubuntu_container_key.private_key_pem
+output "container_private_key" {
+  value     = tls_private_key.container_key.private_key_pem
   sensitive = true
 }
 
-output "ubuntu_container_public_key" {
-  value = tls_private_key.ubuntu_container_key.public_key_openssh
+output "container_public_key" {
+  value = tls_private_key.container_key.public_key_openssh
 }
 
