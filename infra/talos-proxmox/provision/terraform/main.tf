@@ -15,23 +15,25 @@ resource "proxmox_virtual_environment_download_file" "talos_image" {
 }
 
 # Create a controlplane node
-module "talos_controlplane_01" {
+module "talos_controlplane" {
   source = "./modules/proxmox-talos-vm"
+  count  = length(var.control_plane_nodes)
 
   # VM Configuration
-  vm_name         = "talos-cp-01"
-  talos_image_id  = proxmox_virtual_environment_download_file.talos_image.id
-  pve_node_name   = "proxmox"
+  vm_name        = var.control_plane_nodes[count.index].vm_name
+  talos_image_id = proxmox_virtual_environment_download_file.talos_image.id
+  pve_node_name  = var.virtual_environment.node_name
   
   # Hardware specs
-  cpu_cores    = 2
-  memory_size  = 4096
-  disk_size    = 30
+  cpu_cores      = var.control_plane_nodes[count.index].cpu_cores
+  memory_size    = var.control_plane_nodes[count.index].memory_size
+  disk_size      = var.control_plane_nodes[count.index].disk_size
   
-  # Network configuration
-  ipv4_address  = "192.168.0.60/24"
-  ipv4_gateway           = "192.168.0.1"
-  dns_servers       = ["192.168.0.1", "1.1.1.1"]
+  # Network configuration (using DHCP for workers)
+  enable_cloud_init = true
+  dns_servers       = var.dns_config.servers
+  ipv4_address = var.control_plane_nodes[count.index].ipv4_address
+  ipv4_gateway = var.control_plane_nodes[count.index].ipv4_gateway
   
   # Optional features
   enable_tpm = true
