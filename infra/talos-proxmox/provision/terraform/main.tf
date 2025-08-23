@@ -29,9 +29,8 @@ module "talos_controlplane_01" {
   disk_size    = 30
   
   # Network configuration
-  ip_type            = "static"
-  static_ip_address  = "192.168.0.60/24"
-  gateway           = "192.168.0.1"
+  ipv4_address  = "192.168.0.60/24"
+  ipv4_gateway           = "192.168.0.1"
   dns_servers       = ["192.168.0.1", "1.1.1.1"]
   
   # Optional features
@@ -41,22 +40,24 @@ module "talos_controlplane_01" {
 # Create worker nodes
 module "talos_worker" {
   source = "./modules/proxmox-talos-vm"
-  count  = 2
+  count  = length(var.worker_nodes)
 
   # VM Configuration
-  vm_name        = "talos-worker-${count.index + 1}"
+  vm_name        = var.worker_nodes[count.index].vm_name
   talos_image_id = proxmox_virtual_environment_download_file.talos_image.id
-  pve_node_name  = "proxmox"
+  pve_node_name  = var.virtual_environment.node_name
   
   # Hardware specs
-  cpu_cores   = 4
-  memory_size = 8192
-  disk_size   = 50
+  cpu_cores      = var.worker_nodes[count.index].cpu_cores
+  memory_size    = var.worker_nodes[count.index].memory_size
+  disk_size      = var.worker_nodes[count.index].disk_size
   
   # Network configuration (using DHCP for workers)
-  ip_type = "dhcp"
   enable_cloud_init = true
-  
+  dns_servers       = var.dns_config.servers
+  ipv4_address = var.worker_nodes[count.index].ipv4_address
+  ipv4_gateway = var.worker_nodes[count.index].ipv4_gateway
+
   # Talos specific
   node_type    = "worker"
   cluster_name = "homelab-k8s"
