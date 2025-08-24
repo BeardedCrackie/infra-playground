@@ -20,3 +20,13 @@ output "ca_certificate" {
   value       = talos_machine_secrets.this.client_configuration.ca_certificate
   sensitive   = true
 }
+
+output "cluster_endpoint" {
+  description = "Cluster endpoint URL"
+  value       = local.cluster_endpoint
+}
+
+output "controlplane_nodes" {
+  description = "List of control plane node IPs"
+  value       = local.controlplane_ips
+}

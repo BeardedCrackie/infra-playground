@@ -7,9 +7,11 @@ data "talos_machine_configuration" "controlplane" {
 }
 
 resource "talos_machine_configuration_apply" "controlplane" {
+  count = length(local.controlplane_ips)
+  
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  node                        = local.controlplane_ip
+  node                        = local.controlplane_ips[count.index]
   config_patches = [
     yamlencode({
       machine = {

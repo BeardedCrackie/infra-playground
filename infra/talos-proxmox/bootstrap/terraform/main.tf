@@ -5,7 +5,7 @@ resource "talos_machine_secrets" "this" {}
 data "talos_client_configuration" "this" {
   cluster_name         = var.cluster_name
   client_configuration = talos_machine_secrets.this.client_configuration
-  nodes                = [ local.controlplane_ip ]
+  nodes                = local.controlplane_ips
 }
 
 resource "talos_machine_bootstrap" "this" {
@@ -17,7 +17,7 @@ resource "talos_machine_bootstrap" "this" {
   ]
   
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = local.controlplane_ip
+  node                 = local.controlplane_ips[0]  # Bootstrap from first control plane
 }
 
 resource "talos_cluster_kubeconfig" "this" {
@@ -25,7 +25,7 @@ resource "talos_cluster_kubeconfig" "this" {
     talos_machine_bootstrap.this
   ]
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = local.controlplane_ip
+  node                 = local.controlplane_ips[0]  # Get kubeconfig from first control plane
 }
 
 resource "local_file" "kubeconfig" {
