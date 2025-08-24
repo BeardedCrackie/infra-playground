@@ -1,8 +1,10 @@
-
 locals {
   talos = {
     version = "v1.10.6"
   }
+  # Create maps from lists for stable resource addressing
+  control_plane_map = { for node in var.control_plane_nodes : node.vm_name => node }
+  worker_map = { for node in var.worker_nodes : node.vm_name => node }
 }
 
 resource "proxmox_virtual_environment_download_file" "talos_image" {
@@ -14,26 +16,26 @@ resource "proxmox_virtual_environment_download_file" "talos_image" {
   overwrite    = false
 }
 
-# Create a controlplane node
+# Create controlplane nodes
 module "talos_controlplane" {
-  source = "./modules/proxmox-talos-vm"
-  count  = length(var.control_plane_nodes)
+  source   = "./modules/proxmox-talos-vm"
+  for_each = local.control_plane_map
 
   # VM Configuration
-  vm_name        = var.control_plane_nodes[count.index].vm_name
+  vm_name        = each.value.vm_name
   talos_image_id = proxmox_virtual_environment_download_file.talos_image.id
   pve_node_name  = var.virtual_environment.node_name
   
   # Hardware specs
-  cpu_cores      = var.control_plane_nodes[count.index].cpu_cores
-  memory_size    = var.control_plane_nodes[count.index].memory_size
-  disk_size      = var.control_plane_nodes[count.index].disk_size
+  cpu_cores      = each.value.cpu_cores
+  memory_size    = each.value.memory_size
+  disk_size      = each.value.disk_size
   
-  # Network configuration (using DHCP for workers)
+  # Network configuration
   enable_cloud_init = true
   dns_servers       = var.dns_config.servers
-  ipv4_address = var.control_plane_nodes[count.index].ipv4_address
-  ipv4_gateway = var.control_plane_nodes[count.index].ipv4_gateway
+  ipv4_address = each.value.ipv4_address
+  ipv4_gateway = each.value.ipv4_gateway
   
   # Optional features
   enable_tpm = true
@@ -41,24 +43,24 @@ module "talos_controlplane" {
 
 # Create worker nodes
 module "talos_worker" {
-  source = "./modules/proxmox-talos-vm"
-  count  = length(var.worker_nodes)
+  source   = "./modules/proxmox-talos-vm"
+  for_each = local.worker_map
 
   # VM Configuration
-  vm_name        = var.worker_nodes[count.index].vm_name
+  vm_name        = each.value.vm_name
   talos_image_id = proxmox_virtual_environment_download_file.talos_image.id
   pve_node_name  = var.virtual_environment.node_name
   
   # Hardware specs
-  cpu_cores      = var.worker_nodes[count.index].cpu_cores
-  memory_size    = var.worker_nodes[count.index].memory_size
-  disk_size      = var.worker_nodes[count.index].disk_size
+  cpu_cores      = each.value.cpu_cores
+  memory_size    = each.value.memory_size
+  disk_size      = each.value.disk_size
   
-  # Network configuration (using DHCP for workers)
+  # Network configuration
   enable_cloud_init = true
   dns_servers       = var.dns_config.servers
-  ipv4_address = var.worker_nodes[count.index].ipv4_address
-  ipv4_gateway = var.worker_nodes[count.index].ipv4_gateway
+  ipv4_address = each.value.ipv4_address
+  ipv4_gateway = each.value.ipv4_gateway
 
   # Talos specific
   node_type    = "worker"
