@@ -30,7 +30,8 @@ module "talos_controlplane" {
   cpu_cores      = each.value.cpu_cores
   memory_size    = each.value.memory_size
   disk_size      = each.value.disk_size
-  
+  pve_datastore_id = var.virtual_environment.datastore_id
+
   # Network configuration
   enable_cloud_init = true
   dns_servers       = var.dns_config.servers
@@ -55,6 +56,7 @@ module "talos_worker" {
   cpu_cores      = each.value.cpu_cores
   memory_size    = each.value.memory_size
   disk_size      = each.value.disk_size
+  pve_datastore_id = var.virtual_environment.datastore_id
   
   # Network configuration
   enable_cloud_init = true
