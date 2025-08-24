@@ -37,6 +37,18 @@ variable "cluster_vip" {
   default     = ""
 }
 
+variable "bootstrap_node_ip" {
+  description = "IP of the node to use for bootstrap operations (optional - uses first available control plane if not provided)"
+  type        = string
+  default     = ""
+}
+
+variable "force_kubeconfig_recreation" {
+  description = "Set to current timestamp to force kubeconfig recreation (e.g., run date +%s)"
+  type        = string
+  default     = ""
+}
+
 variable "worker_ips" {
   description = "List of worker node IPs"
   type        = list(string)

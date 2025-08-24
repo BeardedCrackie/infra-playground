@@ -17,7 +17,7 @@ resource "talos_machine_bootstrap" "this" {
   ]
   
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = local.controlplane_ips[0]  # Bootstrap from first control plane
+  node                 = local.bootstrap_node_ip  # Use configurable bootstrap node
 }
 
 resource "talos_cluster_kubeconfig" "this" {
@@ -25,7 +25,7 @@ resource "talos_cluster_kubeconfig" "this" {
     talos_machine_bootstrap.this
   ]
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = local.controlplane_ips[0]  # Get kubeconfig from first control plane
+  node                 = local.bootstrap_node_ip  # Use configurable bootstrap node for kubeconfig
 }
 
 resource "local_file" "kubeconfig" {

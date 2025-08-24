@@ -30,3 +30,8 @@ output "controlplane_nodes" {
   description = "List of control plane node IPs"
   value       = local.controlplane_ips
 }
+
+output "bootstrap_node" {
+  description = "IP of the node used for bootstrap operations"
+  value       = local.bootstrap_node_ip
+}
