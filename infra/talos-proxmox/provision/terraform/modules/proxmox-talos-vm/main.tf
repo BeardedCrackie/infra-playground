@@ -41,12 +41,10 @@ resource "proxmox_virtual_environment_vm" "talos_vm" {
 
   initialization {
     datastore_id = var.pve_datastore_id
-    # For Talos, we don't use Proxmox cloud-init network config since Talos handles networking
-    # Only set DNS configuration via cloud-init
     ip_config {
       ipv4 {
-        address = var.static_ip_address
-        gateway = var.gateway
+        address = var.ipv4_address
+        gateway = var.ipv4_gateway
       }
     }
     dns {

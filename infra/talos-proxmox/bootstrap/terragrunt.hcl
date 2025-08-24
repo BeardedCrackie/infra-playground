@@ -12,6 +12,6 @@ dependency "provision" {
 }
 
 inputs = {
-  controlplane_ip = dependency.provision.outputs.controlplane_ip
+  controlplane_ips = dependency.provision.outputs.controlplane_ips
   worker_ips      = dependency.provision.outputs.worker_ips
 }

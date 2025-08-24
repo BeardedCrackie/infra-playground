@@ -44,26 +44,16 @@ variable "pve_node_name" {
   description = "Proxmox node name"
 }
 
-variable "ip_type" {
+variable "ipv4_address" {
   type        = string
-  default     = "dhcp"
-  description = "IP configuration type: 'dhcp' or 'static'"
-  validation {
-    condition     = contains(["dhcp", "static"], var.ip_type)
-    error_message = "IP type must be either 'dhcp' or 'static'."
-  }
+  description = "IPv4 CIDR format or dhcp"
+  default = "dhcp"
 }
 
-variable "static_ip_address" {
+variable "ipv4_gateway" {
   type        = string
+  description = "IPv4 gateway. Optional if ipv4_address is 'dhcp'"
   default     = null
-  description = "Static IP address with CIDR notation (e.g., '192.168.1.100/24')"
-}
-
-variable "gateway" {
-  type        = string
-  default     = null
-  description = "Gateway IP address (required when using static IP)"
 }
 
 variable "dns_domain" {
