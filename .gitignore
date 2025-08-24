@@ -44,3 +44,5 @@ inventory.yaml
 
 root.hcl
 .terragrunt*
+
+venv
