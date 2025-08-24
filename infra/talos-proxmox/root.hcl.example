@@ -30,6 +30,35 @@ inputs = {
         node_name    = "proxmox"
         datastore_id = "ssd-lvm"
     }
+
+    control_plane_nodes=[
+      {
+      vm_name = "cp-01"
+      cpu_cores = 4
+      memory_size = 8192
+      disk_size = 20
+      ipv4_address = "192.168.0.60/24"
+      ipv4_gateway = "192.168.0.1"
+      }
+    ]
+
+    worker_nodes=[
+      {
+      vm_name = "worker-01"
+      cpu_cores = 2
+      memory_size = 4096
+      disk_size = 20
+      ipv4_address = "dhcp"
+      },
+      {
+      vm_name = "worker-02"
+      cpu_cores = 2
+      memory_size = 4096
+      disk_size = 20
+      ipv4_address = "dhcp"
+      }
+    ]
+
     project_name      = "devops-playground"
     priv_key_path     = "~/.ssh/id_ed25519"
     cluster_name      = "devops-playground-mngmt"
