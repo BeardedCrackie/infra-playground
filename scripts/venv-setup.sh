@@ -21,7 +21,7 @@ pip install ansible kubernetes
 ansible-galaxy install -r $SCRIPT_DIR/requirements.yml
 
 # Download and install Terraform CLI in the virtualenv's bin folder
-TERRAFORM_VERSION="1.13.0"
+TERRAFORM_VERSION="1.12.2"
 TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
 TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}"
 
@@ -36,7 +36,7 @@ rm /tmp/${TERRAFORM_ZIP}
 terraform version
 
 # Install Terragrunt
-TERRAGRUNT_VERSION="v0.86.1"
+TERRAGRUNT_VERSION="v0.85.0"
 TERRAGRUNT_BIN="terragrunt"
 TERRAGRUNT_URL="https://github.com/gruntwork-io/terragrunt/releases/download/${TERRAGRUNT_VERSION}/terragrunt_linux_amd64"
 
