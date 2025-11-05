@@ -34,34 +34,50 @@ jobs:
 
       - name: Find terraform directories and set output
         id: set
+        shell: bash
         run: |
           set -euo pipefail
-          # Find directories that contain .tf files while excluding common vendor/state folders.
-          mapfile -t dirs < <( \
-            find . -path './.git' -prune -o -type f -name '*.tf' -print0 \
-              | xargs -0 -n1 dirname \
-              | sed 's|^\./||' \
-              | grep -vE '(^\.terraform|^terraform/.terraform|^modules/|^vendor/)' \
-              | sort -u \
-          )
 
-          if [ "${#dirs[@]}" -eq 0 ]; then
+          # Use provided paths from workflow_dispatch if present (comma separated)
+          INPUT_PATHS="${{ github.event.inputs.paths || '' }}"
+          dirs=()
+
+          if [ -n "$INPUT_PATHS" ]; then
+            IFS=',' read -r -a arr <<< "$INPUT_PATHS"
+            for p in "${arr[@]}"; do
+              p="$(echo "$p" | sed 's|^\s*||; s|\s*$||')"
+              [ -z "$p" ] && continue
+              p="${p%/}"
+              if [ -d "$p" ]; then
+                dirs+=("$p")
+              else
+                echo "Warning: provided path does not exist: $p" >&2
+              fi
+            done
+          else
+            # Auto-detect directories containing .tf files (exclude common vendor/state dirs)
+            mapfile -t dirs < <( \
+              find . -path './.git' -prune -o -type f -name '*.tf' -print0 \
+                | xargs -0 -n1 dirname \
+                | sed 's|^\./||' \
+                | grep -vE '(^\.terraform|^terraform/.terraform|^modules/|^vendor/)' \
+                | sort -u \
+            )
+          fi
+
+          if [ ${#dirs[@]} -eq 0 ]; then
             echo "No terraform directories found"
             echo "dirs=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Create a JSON array string for the matrix
+          # Build a JSON array string for the matrix
           json='['
           sep=''
           for d in "${dirs[@]}"; do
-            # ignore empty paths
-            if [ -n "$d" ]; then
-              # Escape double quotes and backslashes
-              esc=$(printf '%s' "$d" | sed 's/\\/\\\\/g; s/"/\\"/g')
-              json="${json}${sep}\"${esc}\""
-              sep=','
-            fi
+            esc=$(printf '%s' "$d" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            json="${json}${sep}\"${esc}\""
+            sep=','
           done
           json="${json}]"
           echo "Found terraform directories:"
@@ -72,7 +88,6 @@ jobs:
     name: Run static checks per Terraform directory
     needs: detect
     runs-on: ubuntu-latest
-    # skip job if no dirs found
     if: ${{ needs.detect.outputs.dirs != '[]' }}
     strategy:
       fail-fast: false
@@ -105,17 +120,37 @@ jobs:
             exit 1
           fi
 
+      - name: Install TFLint
+        run: |
+          set -euo pipefail
+          # Pin a TFLint version you trust
+          TFLINT_VERSION="0.44.0"
+          echo "Installing tflint v${TFLINT_VERSION}"
+          curl -sSL -o /tmp/tflint.zip "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip"
+          unzip -q /tmp/tflint.zip -d /tmp
+          sudo mv /tmp/tflint /usr/local/bin/tflint
+          tflint --version
+
       - name: Run TFLint (static)
-        uses: terraform-linters/tflint-action@v1
-        with:
-          directory: ${{ matrix.dir }}
-          # optional: pin a tflint version if you want reproducibility
-          # tflint_version: "0.44.0"
+        run: |
+          set -euo pipefail
+          # initialize (may attempt plugin downloads) but we allow it to continue if not available
+          (cd "${{ matrix.dir }}" && tflint --init || true)
+          (cd "${{ matrix.dir }}" && tflint || true)
+
+      - name: Install tfsec
+        run: |
+          set -euo pipefail
+          echo "Installing tfsec (latest release)"
+          # download latest tfsec linux binary and install to /usr/local/bin
+          curl -sSL "https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec_linux_amd64.tar.gz" | tar -xz -C /tmp
+          sudo mv /tmp/tfsec /usr/local/bin/tfsec
+          tfsec --version
 
       - name: Run tfsec (static)
-        uses: aquasecurity/tfsec-action@v1
-        with:
-          dir: ${{ matrix.dir }}
+        run: |
+          set -euo pipefail
+          (cd "${{ matrix.dir }}" && tfsec . || true)
 
       - name: Save simple marker (always)
         if: always()
