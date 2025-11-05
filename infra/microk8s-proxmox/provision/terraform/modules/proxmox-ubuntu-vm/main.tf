@@ -1,8 +1,8 @@
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
-  name       = "${var.vm_name}"
+  name        = var.vm_name
   description = "Managed by Terraform"
   tags        = ["terraform", "ubuntu", "ansible", "microk8s"]
-  started = true
+  started     = true
 
   #timeout in seconds
   timeout_create = "18000"
@@ -11,7 +11,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   cpu {
     cores = var.cpu_cores
-    type         = "host"
+    type  = "host"
   }
 
   memory {
@@ -62,7 +62,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 
   tpm_state {
-    version = "v2.0"
+    version      = "v2.0"
     datastore_id = var.pve_datastore_id
   }
 }
@@ -75,7 +75,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 
   source_raw {
     #hostname: ${var.vm_name}
-    data = <<-EOF
+    data      = <<-EOF
     #cloud-config
     hostname: ${var.vm_name}
     users:
