@@ -1,0 +1,140 @@
+name: "Terraform — Static validation (fmt, tflint, tfsec)"
+
+on:
+  pull_request:
+    paths:
+      - '**/*.tf'
+      - 'terraform/**'
+      - 'apps/**/terraform/**'
+      - 'clusters/**'
+  push:
+    paths:
+      - '**/*.tf'
+      - 'terraform/**'
+      - 'apps/**/terraform/**'
+      - 'clusters/**'
+
+jobs:
+  detect:
+    name: Detect Terraform directories
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.set.outputs.dirs }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find terraform directories and set output
+        id: set
+        run: |
+          set -euo pipefail
+          # Find directories that contain .tf files while excluding common vendor/state folders.
+          mapfile -t dirs < <( \
+            find . -path './.git' -prune -o -type f -name '*.tf' -print0 \
+              | xargs -0 -n1 dirname \
+              | sed 's|^\./||' \
+              | grep -vE '(^\.terraform|^terraform/.terraform|^modules/|^vendor/)' \
+              | sort -u \
+          )
+
+          if [ "${#dirs[@]}" -eq 0 ]; then
+            echo "No terraform directories found"
+            echo "dirs=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Create a JSON array string for the matrix
+          json='['
+          sep=''
+          for d in "${dirs[@]}"; do
+            # ignore empty paths
+            if [ -n "$d" ]; then
+              # Escape double quotes and backslashes
+              esc=$(printf '%s' "$d" | sed 's/\\/\\\\/g; s/"/\\"/g')
+              json="${json}${sep}\"${esc}\""
+              sep=','
+            fi
+          done
+          json="${json}]"
+          echo "Found terraform directories:"
+          printf '%s\n' "${dirs[@]}"
+          echo "dirs=${json}" >> $GITHUB_OUTPUT
+
+  validate:
+    name: Run static checks per Terraform directory
+    needs: detect
+    runs-on: ubuntu-latest
+    # skip job if no dirs found
+    if: ${{ needs.detect.outputs.dirs != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.detect.outputs.dirs) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show matrix dir
+        run: |
+          echo "Validating directory: '${{ matrix.dir }}'"
+          ls -la "${{ matrix.dir }}" || true
+
+      - name: Setup Terraform (for terraform fmt)
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Terraform fmt (check)
+        run: |
+          set -euo pipefail
+          if [ -d "${{ matrix.dir }}" ]; then
+            echo "Running terraform fmt -check in ${{ matrix.dir }}"
+            (cd "${{ matrix.dir }}" && terraform fmt -check -recursive)
+          else
+            echo "Directory does not exist: ${{ matrix.dir }}"
+            exit 1
+          fi
+
+      - name: Run TFLint (static)
+        uses: terraform-linters/tflint-action@v1
+        with:
+          directory: ${{ matrix.dir }}
+          # optional: pin a tflint version if you want reproducibility
+          # tflint_version: "0.44.0"
+
+      - name: Run tfsec (static)
+        uses: aquasecurity/tfsec-action@v1
+        with:
+          dir: ${{ matrix.dir }}
+
+      - name: Save simple marker (always)
+        if: always()
+        run: |
+          echo "dir=${{ matrix.dir }} status=$([ $? -eq 0 ] && echo success || echo fail)" >> validations-summary.txt || true
+
+  summary:
+    name: Summary
+    needs: validate
+    runs-on: ubuntu-latest
+    if: ${{ needs.detect.outputs.dirs != '[]' }}
+    steps:
+      - name: Checkout (to fetch validations-summary)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show detected directories and point to logs
+        run: |
+          echo "Terraform static validations finished."
+          echo "Detected directories: ${{ needs.detect.outputs.dirs }}"
+          echo ""
+          echo "Per-directory logs are available in each matrix job above (tflint, tfsec, terraform fmt outputs)."
+          echo ""
+          if [ -f validations-summary.txt ]; then
+            echo "Quick summary:"
+            cat validations-summary.txt || true
+          fi
