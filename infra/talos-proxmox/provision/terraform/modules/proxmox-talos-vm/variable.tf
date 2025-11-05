@@ -47,7 +47,7 @@ variable "pve_node_name" {
 variable "ipv4_address" {
   type        = string
   description = "IPv4 CIDR format or dhcp"
-  default = "dhcp"
+  default     = "dhcp"
 }
 
 variable "ipv4_gateway" {

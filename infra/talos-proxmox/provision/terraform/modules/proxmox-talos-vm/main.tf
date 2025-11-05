@@ -18,7 +18,7 @@ resource "proxmox_virtual_environment_vm" "talos_vm" {
   memory {
     dedicated = var.memory_size
   }
-  
+
   agent {
     enabled = true
   }
