@@ -1,32 +1,32 @@
 variable "virtual_environment" {
-    type = object({
-        password = string
-        endpoint = string
-        username = string
-        node_name = string
-        datastore_id = string
-    })
-    sensitive = true
-} 
+  type = object({
+    password     = string
+    endpoint     = string
+    username     = string
+    node_name    = string
+    datastore_id = string
+  })
+  sensitive = true
+}
 
 variable "project_name" {
-    type = string
-} 
+  type = string
+}
 
 variable "vm_username" {
-    type = string
-    default = "ubuntu"
-} 
+  type    = string
+  default = "ubuntu"
+}
 
 variable "vm_count" {
-    type = number
-    default = 1
+  type    = number
+  default = 1
 }
 
 variable "priv_key_path" {
-    type = string
-    description = "Path to the public key file"
-    default     = "~/.ssh/id_rsa"
+  type        = string
+  description = "Path to the public key file"
+  default     = "~/.ssh/id_rsa"
 }
 
 locals {
@@ -34,9 +34,9 @@ locals {
 }
 
 variable "public_key_path" {
-    description = "Path to the public key file"
-    type        = string
-    default     = "~/.ssh/id_rsa.pub"
+  description = "Path to the public key file"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
 }
 
 locals {
@@ -44,6 +44,6 @@ locals {
 }
 
 variable "image_url" {
-    type = string
-    default = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  type    = string
+  default = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
 }
