@@ -38,7 +38,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Use provided paths from workflow_dispatch if present (comma separated)
           INPUT_PATHS="${{ github.event.inputs.paths || '' }}"
           dirs=()
 
@@ -55,7 +54,6 @@ jobs:
               fi
             done
           else
-            # Auto-detect directories containing .tf files (exclude common vendor/state dirs)
             mapfile -t dirs < <( \
               find . -path './.git' -prune -o -type f -name '*.tf' -print0 \
                 | xargs -0 -n1 dirname \
@@ -71,7 +69,6 @@ jobs:
             exit 0
           fi
 
-          # Build a JSON array string for the matrix
           json='['
           sep=''
           for d in "${dirs[@]}"; do
@@ -114,7 +111,12 @@ jobs:
           set -euo pipefail
           if [ -d "${{ matrix.dir }}" ]; then
             echo "Running terraform fmt -check in ${{ matrix.dir }}"
-            (cd "${{ matrix.dir }}" && terraform fmt -check -recursive)
+            if ! (cd "${{ matrix.dir }}" && terraform fmt -check -recursive); then
+              echo "Formatting issues detected in ${{ matrix.dir }}. To auto-fix, run: terraform fmt -recursive"
+              # show diff to help contributors
+              (cd "${{ matrix.dir }}" && terraform fmt -diff -recursive) || true
+              exit 1
+            fi
           else
             echo "Directory does not exist: ${{ matrix.dir }}"
             exit 1
@@ -123,34 +125,86 @@ jobs:
       - name: Install TFLint
         run: |
           set -euo pipefail
-          # Pin a TFLint version you trust
           TFLINT_VERSION="0.44.0"
           echo "Installing tflint v${TFLINT_VERSION}"
-          curl -sSL -o /tmp/tflint.zip "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip"
+          curl -sSL -f -o /tmp/tflint.zip "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip"
           unzip -q /tmp/tflint.zip -d /tmp
           sudo mv /tmp/tflint /usr/local/bin/tflint
+          sudo chmod +x /usr/local/bin/tflint
           tflint --version
 
       - name: Run TFLint (static)
         run: |
           set -euo pipefail
-          # initialize (may attempt plugin downloads) but we allow it to continue if not available
+          # init may attempt plugin downloads; allow it to continue if plugins unavailable
           (cd "${{ matrix.dir }}" && tflint --init || true)
-          (cd "${{ matrix.dir }}" && tflint || true)
+          (cd "${{ matrix.dir }}" && tflint) || true
 
-      - name: Install tfsec
+      - name: Install tfsec (robust inline installer)
         run: |
           set -euo pipefail
-          echo "Installing tfsec (latest release)"
-          # download latest tfsec linux binary and install to /usr/local/bin
-          curl -sSL "https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec_linux_amd64.tar.gz" | tar -xz -C /tmp
-          sudo mv /tmp/tfsec /usr/local/bin/tfsec
+          TFCSEC_VERSION="${TFCSEC_VERSION:-latest}"
+          TMP="/tmp/tfsec_asset_$$"
+          DEST="/usr/local/bin/tfsec"
+          rm -f "$TMP"
+          urls=(
+            "https://github.com/aquasecurity/tfsec/releases/${TFCSEC_VERSION}/download/tfsec_linux_amd64"
+            "https://github.com/aquasecurity/tfsec/releases/${TFCSEC_VERSION}/download/tfsec-linux-amd64"
+            "https://github.com/aquasecurity/tfsec/releases/${TFCSEC_VERSION}/download/tfsec_linux_amd64.tar.gz"
+            "https://github.com/aquasecurity/tfsec/releases/${TFCSEC_VERSION}/download/tfsec-linux-amd64.tar.gz"
+            "https://github.com/aquasecurity/tfsec/releases/${TFCSEC_VERSION}/download/tfsec_linux_amd64.zip"
+            "https://github.com/aquasecurity/tfsec/releases/${TFCSEC_VERSION}/download/tfsec"
+          )
+          for url in "${urls[@]}"; do
+            echo "Trying $url"
+            if curl -sSL -f -o "$TMP" "$url"; then
+              mime=$(file -b --mime-type "$TMP" || true)
+              echo "mime=$mime"
+              if [[ "$mime" == "application/gzip" || "$mime" == "application/x-gzip" ]]; then
+                mkdir -p /tmp/tfsec-extract-$$
+                tar -xz -C /tmp/tfsec-extract-$$ -f "$TMP"
+                if [ -f /tmp/tfsec-extract-$$/tfsec ]; then
+                  sudo mv /tmp/tfsec-extract-$$/tfsec "$DEST"
+                  sudo chmod +x "$DEST"
+                  break
+                fi
+              elif [[ "$mime" == "application/zip" ]]; then
+                mkdir -p /tmp/tfsec-extract-$$
+                unzip -q "$TMP" -d /tmp/tfsec-extract-$$
+                if [ -f /tmp/tfsec-extract-$$/tfsec ]; then
+                  sudo mv /tmp/tfsec-extract-$$/tfsec "$DEST"
+                  sudo chmod +x "$DEST"
+                  break
+                fi
+              else
+                # try raw binary or ELF
+                if head -c 4 "$TMP" 2>/dev/null | grep -q 'ELF'; then
+                  sudo mv "$TMP" "$DEST"
+                  sudo chmod +x "$DEST"
+                  break
+                fi
+                # treat small raw binary (no ELF) as possible executable
+                if [ -s "$TMP" ] && [ "$(wc -c <"$TMP")" -gt 1000 ]; then
+                  sudo mv "$TMP" "$DEST"
+                  sudo chmod +x "$DEST"
+                  break
+                fi
+                echo "Downloaded asset is not recognized as a usable tfsec binary; continuing to next candidate"
+              fi
+            else
+              echo "Download failed for $url (non-200 or network error)"
+            fi
+          done
+          if [ ! -x "$DEST" ]; then
+            echo "Failed to install tfsec; please check release assets or pin a specific version"
+            exit 3
+          fi
           tfsec --version
 
       - name: Run tfsec (static)
         run: |
           set -euo pipefail
-          (cd "${{ matrix.dir }}" && tfsec . || true)
+          (cd "${{ matrix.dir }}" && tfsec .) || true
 
       - name: Save simple marker (always)
         if: always()

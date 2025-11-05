@@ -2,11 +2,11 @@
 terraform {
   required_providers {
     proxmox = {
-      source = "bpg/proxmox"
+      source  = "bpg/proxmox"
       version = "0.61.1"
     }
     null = {
-      source = "hashicorp/null"
+      source  = "hashicorp/null"
       version = "3.2.2"
     }
   }
@@ -16,9 +16,9 @@ provider "proxmox" {
   endpoint = var.virtual_environment.endpoint
   username = var.virtual_environment.username
   password = var.virtual_environment.password
-  insecure  = true
+  insecure = true
   ssh {
-    agent    = false
+    agent       = false
     private_key = file(var.priv_key)
   }
 }
@@ -56,7 +56,7 @@ resource "proxmox_virtual_environment_container" "container" {
   disk {
     datastore_id = var.virtual_environment.datastore_id
   }
-  
+
   network_interface {
     name = "veth0"
   }
@@ -74,10 +74,10 @@ resource "proxmox_virtual_environment_container" "container" {
 }
 
 resource "proxmox_virtual_environment_download_file" "ct_image" {
-  file_name = "${var.project.name}-ubuntu-24.04-lts-image.tar.xz"
+  file_name    = "${var.project.name}-ubuntu-24.04-lts-image.tar.xz"
   content_type = "vztmpl"
   datastore_id = "local"
-  node_name = var.virtual_environment.node_name
+  node_name    = var.virtual_environment.node_name
   url          = var.image_url
 }
 
