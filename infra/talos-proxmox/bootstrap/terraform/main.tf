@@ -10,14 +10,14 @@ data "talos_client_configuration" "this" {
 
 resource "talos_machine_bootstrap" "this" {
   #count = var.bootstrap_cluster ? 1 : 0
-  
+
   depends_on = [
     talos_machine_configuration_apply.controlplane,
     talos_machine_configuration_apply.worker
   ]
-  
+
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = local.bootstrap_node_ip  # Use configurable bootstrap node
+  node                 = local.bootstrap_node_ip # Use configurable bootstrap node
 }
 
 resource "talos_cluster_kubeconfig" "this" {
@@ -25,11 +25,11 @@ resource "talos_cluster_kubeconfig" "this" {
     talos_machine_bootstrap.this
   ]
   client_configuration = talos_machine_secrets.this.client_configuration
-  node                 = local.bootstrap_node_ip  # Use configurable bootstrap node for kubeconfig
+  node                 = local.bootstrap_node_ip # Use configurable bootstrap node for kubeconfig
 }
 
 resource "local_file" "kubeconfig" {
-  content  = talos_cluster_kubeconfig.this.kubeconfig_raw
-  filename = "${path.module}/kubeconfig"
+  content         = talos_cluster_kubeconfig.this.kubeconfig_raw
+  filename        = "${path.module}/kubeconfig"
   file_permission = "0600"
 }
