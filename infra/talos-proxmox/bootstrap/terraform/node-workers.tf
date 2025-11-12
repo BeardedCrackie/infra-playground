@@ -23,4 +23,8 @@ resource "talos_machine_configuration_apply" "worker" {
       }
     })
   ]
+
+  depends_on = [
+    talos_machine_configuration_apply.controlplane
+  ]
 }
