@@ -1,6 +1,5 @@
-
 data "talos_machine_configuration" "worker" {
-  count            = length(local.worker_ips)
+  for_each     = { for idx, ip in local.worker_ips : ip => idx }
   cluster_name     = var.cluster_name
   machine_type     = "worker"
   cluster_endpoint = local.cluster_endpoint
@@ -8,11 +7,12 @@ data "talos_machine_configuration" "worker" {
 }
 
 resource "talos_machine_configuration_apply" "worker" {
-  count = length(local.worker_ips)
+  for_each = { for idx, ip in local.worker_ips : ip => idx }
 
   client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.worker[count.index].machine_configuration
-  node                        = local.worker_ips[count.index]
+  machine_configuration_input = data.talos_machine_configuration.worker[each.key].machine_configuration
+  node                        = each.key
+
   config_patches = [
     yamlencode({
       machine = {

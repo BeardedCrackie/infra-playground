@@ -1,4 +1,3 @@
-
 data "talos_machine_configuration" "controlplane" {
   cluster_name     = var.cluster_name
   machine_type     = "controlplane"
@@ -7,11 +6,12 @@ data "talos_machine_configuration" "controlplane" {
 }
 
 resource "talos_machine_configuration_apply" "controlplane" {
-  count = length(local.controlplane_ips)
+  for_each = { for idx, ip in local.controlplane_ips : ip => idx }
 
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  node                        = local.controlplane_ips[count.index]
+  node                        = each.key
+
   config_patches = [
     yamlencode({
       machine = {
