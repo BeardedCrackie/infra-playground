@@ -24,9 +24,9 @@ remote_state {
 
 inputs = {
     virtual_environment={
-        password     = "As4arj8cP8@p#tza^m@oEC!!D"
-        endpoint     = "https://192.168.0.20:8006/api2/json"
-        username     = "potociarm@pam"
+        password     = "password"
+        endpoint     = "https://<proxmox_ip>:8006/api2/json"
+        username     = "user@pam"
         node_name    = "proxmox"
         datastore_id = "ssd-lvm"
     }
