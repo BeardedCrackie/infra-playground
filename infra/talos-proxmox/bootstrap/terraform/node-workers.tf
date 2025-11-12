@@ -1,5 +1,5 @@
 data "talos_machine_configuration" "worker" {
-  for_each     = { for idx, ip in local.worker_ips : ip => idx }
+  for_each         = { for idx, ip in local.worker_ips : ip => idx }
   cluster_name     = var.cluster_name
   machine_type     = "worker"
   cluster_endpoint = local.cluster_endpoint
