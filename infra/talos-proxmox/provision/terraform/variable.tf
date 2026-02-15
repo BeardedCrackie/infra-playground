@@ -1,12 +1,8 @@
 variable "virtual_environment" {
   type = object({
-    password     = string
-    endpoint     = string
-    username     = string
     node_name    = string
     datastore_id = string
   })
-  sensitive = true
 }
 
 variable "project_name" {
