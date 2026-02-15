@@ -1,0 +1,4 @@
+[tools]
+kubectl = "latest"
+terraform = "latest"
+terragrunt = "latest"
